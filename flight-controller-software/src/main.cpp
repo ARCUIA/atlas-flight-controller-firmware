@@ -17,6 +17,7 @@
 // Header Files
 #include "startup.hpp"
 #include "myEnums.hpp"
+#include "sd_handler.hpp"
 
 // Pins
 const int ssPin = 10;
@@ -44,7 +45,7 @@ void setup()
   Wire.begin();
   Serial1.begin(57600); // GPS
   Serial7.begin(57600); // Radio, default speed up if needed for timing.
-  
+  initSD(ssPin); // Returns Error if Failed.
 }
 
 void loop() {

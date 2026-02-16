@@ -49,3 +49,5 @@
 .vscode/*
 flight-controller-software/platformio.ini
 flight-controller-software/.vscode/c_cpp_properties.json
+flight-controller-software/.DS_Store
+flight-controller-software/.vscode/extensions.json
