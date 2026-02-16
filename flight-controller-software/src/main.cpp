@@ -12,11 +12,11 @@
 #include "startup.h"
 
 // Declaring Constants Here
-const uint16_t delay = 10000; // uS
+const uint32_t DELAY = 10000UL; // uS
 
 // Declaring Variables Here
-uint16_t now = micros();
-uint16_t prev = now;
+uint32_t now = micros();
+uint32_t prev = now;
 
 // Create Objects Here
 
@@ -27,9 +27,9 @@ void setup()
 }
 
 void loop() {
-  uint16_t now = micros();
+  now = micros();
 
-  if (now - prev >= delay) {
+  if (now - prev >= DELAY) {
     // Get I2C Data
 
 
