@@ -12,15 +12,10 @@ int initSD(int _ssPin) {
 
   // Test write/read
   File file = SD.open("/test.txt", FILE_WRITE);
-  if (file) {
-    file.println("Hello ESP32 SPI Flash SD!");
-    file.close();
-    Serial.println("File written successfully.");
-  } else {
+  if (!file) {
     Serial.println("Failed to open file for writing.");
   }
-
-  file = SD.open("/test.txt");
+  
   if (file) {
     Serial.println("Reading file:");
     while (file.available()) {
