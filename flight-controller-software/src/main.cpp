@@ -1,18 +1,56 @@
+/**
+ * @author Sam Manley
+ * @brief Flight Controller Software for ARCUIA 2026 Secret Message Rocket
+ * @date 2-15-26
+ * @version 1.0.0
+ */
+
+// Libraries
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+// Header Files
+#include "startup.h"
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+// Declaring Constants Here
+const uint16_t delay = 10000; // uS
+
+// Declaring Variables Here
+uint16_t now = micros();
+uint16_t prev = now;
+
+// Create Objects Here
+
+void setup()
+{
+  // Keep Tests out of setup() in case of temp black/brownout.
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+  uint16_t now = micros();
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  if (now - prev >= delay) {
+    // Get I2C Data
+
+
+    // Check if GPS ready, skip otherwise
+    // if (GPS.available()){
+    //   // Read GPS
+    // }
+
+    // State Estimation
+
+
+    // Control Systems
+
+
+    // Data Transmission
+
+
+    // Data Logging
+
+
+
+    prev = now;
+  }
 }
