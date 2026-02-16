@@ -47,3 +47,5 @@
 .vscode/launch.json
 .vscode/ipch
 .vscode/*
+flight-controller-software/platformio.ini
+flight-controller-software/.vscode/c_cpp_properties.json
