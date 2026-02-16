@@ -7,9 +7,11 @@
 
 // Libraries
 #include <Arduino.h>
+#include <Adafruit_LIS2MDL.h>
 
 // Header Files
-#include "startup.h"
+#include "startup.hpp"
+#include "myenums.hpp"
 
 // Declaring Constants Here
 const uint32_t DELAY = 10000UL; // uS
@@ -19,6 +21,7 @@ uint32_t now = micros();
 uint32_t prev = now;
 
 // Create Objects Here
+Adafruit_LIS2MDL mag;
 
 void setup()
 {
