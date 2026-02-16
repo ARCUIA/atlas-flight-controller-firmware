@@ -31,10 +31,8 @@ int initSD(int _ssPin) {
   } else {
     Serial.println("Failed to open file for reading.");
   }
+
+  return 0;
 }
-
-
-
-
 
 #endif
