@@ -52,27 +52,45 @@ void loop() {
   now = micros();
 
   if (now - prev >= DELAY) {
-    // Get I2C Data
+    switch (state) {  
+      case flightState::PREFLIGHT_IDLE:
+        break;
+      
+      case flightState::POWERED_ASCENT:
+        // Get I2C Data
+
+        // ===============
+        //  TODO: Add in Drivers for sensors (LSM6DSV80X, LPS22HH)
+        // ===============
+
+        // Check if GPS ready, skip otherwise
+        // if (GPS.available()){
+        //   // Read GPS
+        // }
+
+        // State Estimation
 
 
-    // Check if GPS ready, skip otherwise
-    // if (GPS.available()){
-    //   // Read GPS
-    // }
-
-    // State Estimation
+        // Control Systems
 
 
-    // Control Systems
+        // Data Transmission
 
 
-    // Data Transmission
-
-
-    // Data Logging
-
-
-
+        // Data Logging
+        break;
+      case flightState::UNPOWERED_ASCENT:
+        // Implement later
+        break;
+      case flightState::CHUTE_DESCENT:
+        // Turn off Cameras
+        // Turn off Motors
+        break;
+      case flightState::POSTFLIGHT_IDLE:
+        // If not already off, turn off everything besides radio and gps
+        // Radio ping GPS every 1 minute, otherwise idle.
+        break;
+      }
     prev = now;
   }
 }
