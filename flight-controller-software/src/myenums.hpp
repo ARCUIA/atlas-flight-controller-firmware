@@ -1,4 +1,5 @@
-
+#ifndef MYENUMS_H
+#define MYENUMS_H
 
 // Perform different loops based on flight state
 enum class flightState
@@ -26,3 +27,5 @@ enum class launchSite
     CEDAR_RAPIDS,
     MINNEAPOLIS
 };
+
+#endif
