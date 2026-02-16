@@ -7,11 +7,19 @@
 
 // Libraries
 #include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
+#include <SD.h>
+#include <FS.h>
 #include <Adafruit_LIS2MDL.h>
+#include <Adafruit_GPS.h>
 
 // Header Files
 #include "startup.hpp"
 #include "myEnums.hpp"
+
+// Pins
+const int ssPin = 10;
 
 // Declaring Constants Here
 const uint32_t DELAY = 10000UL; // uS
@@ -30,8 +38,13 @@ void setup()
 {
   // Keep Tests out of setup() in case of temp black/brownout.
 
-  mag_dec = get_mag_decl(launchSite::IOWA_CITY);
-
+  mag_dec = get_mag_dec(launchSite::IOWA_CITY);
+  
+  // Com Busses
+  Wire.begin();
+  Serial1.begin(57600); // GPS
+  Serial7.begin(57600); // Radio, default speed up if needed for timing.
+  
 }
 
 void loop() {

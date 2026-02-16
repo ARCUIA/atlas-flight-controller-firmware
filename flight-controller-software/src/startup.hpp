@@ -21,7 +21,7 @@ int startup(){
 }
 
 
-float get_mag_decl(launchSite launch_site){
+float get_mag_dec(launchSite launch_site){
     float _mag_dec = 0.0f;
     switch (launch_site)
     {
