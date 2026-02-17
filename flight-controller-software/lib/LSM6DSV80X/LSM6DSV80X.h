@@ -18,6 +18,7 @@ class LSM6DSV80X {
             float ax, ay, az;   // m/s/s
             float gx, gy, gz;   // dps
             float temperature;  // C
+            uint32_t time;      // uS
         };
 
         LSM6DSV80X(IBus& bus, ITimeSource& time) : _bus(bus), _time(time) {}

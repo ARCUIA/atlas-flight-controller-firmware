@@ -9,7 +9,7 @@ class I2CBus : public IBus {
     public :
         I2CBus(TwoWire &wire, uint8_t addr) : _wire(wire), _addr(addr) {}
 
-        void begin()
+        void begin() override
         {
             _wire.begin();
         }

@@ -9,7 +9,7 @@ class SPIBus : public IBus {
     public:
         SPIBus(SPIClass& spi, uint8_t cs) : _spi(spi), _cs(cs) {}
 
-        void begin() 
+        void begin() override
         {
             pinMode(_cs, OUTPUT);
             digitalWrite(_cs, HIGH);
