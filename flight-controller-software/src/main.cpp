@@ -95,3 +95,17 @@ void loop() {
     prev = now;
   }
 }
+
+
+/*================ EXAMPLE ZONE =======================
+
+I2CBus bus(Wire, 0x6A);
+TeensyTime time;
+LSM6DSV80X imu(bus, time);
+
+SPIBus bus(SPI, 10);
+TeensyTime time;
+LSM6DSV80X imu(bus, time);
+
+
+================ EXAMPLE ZONE =========================*/

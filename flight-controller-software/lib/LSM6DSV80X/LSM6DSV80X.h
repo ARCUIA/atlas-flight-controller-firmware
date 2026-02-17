@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Wire.h>
+#include "../Core/src/IBus.hpp"
+#include "../Core/src/ITimeSource.hpp"
 
 /**
  * @author Sam Manley
@@ -18,19 +20,14 @@ class LSM6DSV80X {
             float temperature;  // C
         };
 
-        LSM6DSV80X(SPIClass& spi, uint8_t csPin);
+        LSM6DSV80X(IBus& bus, ITimeSource& time) : _bus(bus), _time(time) {}
 
         bool begin();
-        bool drdy();
-        bool read(IMU_Data &data);
+        bool read(IMU_Data& data);
 
-    private : 
-        SPIClass &_spi;
-        uint8_t _cs;
-
-        void write_register(uint8_t reg, uint8_t value);
-        uint8_t read_register(uint8_t reg);
-        void read_registers(uint8_t reg, uint8_t *buffer, uint8_t length);
+    private :
+        IBus& _bus;
+        ITimeSource& _time;
 };
 
 #endif
