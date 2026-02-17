@@ -9,5 +9,4 @@ class ITimeSource {
         virtual uint32_t now_us() const = 0;
 };
 
-
 #endif
