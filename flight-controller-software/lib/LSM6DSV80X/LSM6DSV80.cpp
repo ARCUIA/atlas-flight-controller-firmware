@@ -26,85 +26,152 @@ typedef enum
 } lsm6dsv80x_xl_op_mode_t;
 
 // ctrl1_xl
-typedef enum xl_odr
+typedef enum
 {
     LSM6DSV80X_XL_POWER_DOWN     = 0b00000000, // default
     LSM6DSV80X_XL_240_ODR        = 0b00000111,
     LSM6DSV80X_XL_480_ODR        = 0b00001000,
-    LSM6DSV80X_XL_960_ORD        = 0b00001001
+    LSM6DSV80X_XL_960_ODR        = 0b00001001
 } lsm6dsv80x_xl_odr_t;
 
 // ctrl2_g
-enum class g_op_mode : uint8_t
-{
-    high_perform   = 0b00000000, // default
-    high_accuracy  = 0b00010000
-};
+// enum class g_op_mode : uint8_t
+// {
+//     high_perform   = 0b00000000, // default
+//     high_accuracy  = 0b00010000
+// };
 
 // ctrl2_g
-enum class g_odr : uint8_t
+typedef enum
 {
-    power_down     = 0b00000000, // default
-    odr_240        = 0b00000111,
-    odr_480        = 0b00001000,
-    odr_960        = 0b00001001
-};
+    LSM6DSV80X_G_HIGH_PERFORMANCE = 0b00000000,
+    LSM6DSV80X_G_HIGH_ACCURACY    = 0b00010000
+} lsm6dsv80x_g_op_mode_t;
+
+// ctrl2_g
+// enum class g_odr : uint8_t
+// {
+//     power_down     = 0b00000000, // default
+//     odr_240        = 0b00000111,
+//     odr_480        = 0b00001000,
+//     odr_960        = 0b00001001
+// };
+
+// ctrl2_g
+typedef enum
+{
+    LSM6DSV80X_G_POWER_DOWN     = 0b00000000, // default
+    LSM6DSV80X_G_ODR_240        = 0b00000111,
+    LSM6DSV80X_G_ODR_480        = 0b00001000,
+    LSM6DSV80X_G_ODR_960        = 0b00001001
+} lsm6dsv80x_g_odr_t;
 
 // ctrl3
-enum class ctrl3_enum : uint8_t
+// enum class ctrl3_enum : uint8_t
+// {
+//     bdu_en         = 0b01000000, // Only update low and high byte after both are read
+//     sw_reset       = 0b00000001  // Reset everything to default settings
+// };
+
+// ctrl3
+typedef enum
 {
-    bdu_en         = 0b01000000, // Only update low and high byte after both are read
-    sw_reset       = 0b00000001  // Reset everything to default settings
-};
+    LSM6DSV80X_BDU_EN         = 0b01000000, // Only update low and high byte after both are read
+    LSM6DSV80X_SW_RESET       = 0b00000001  // Reset everything to default settings
+} lsm6dsv80x_ctrl3_enum_t;
 
 // ctrl6_g
-enum class lpf1_g : uint8_t
-{
-    bw_low         = 0b01011000, // 58  Hz at 960 ODR
-    bw_med         = 0b01001000, // 100 Hz at 960 ODR  <--- Choosing This Default
-    bw_high        = 0b00011000  // 310 Hz at 960 ODR
-};
+// enum class lpf1_g : uint8_t
+// {
+//     bw_low         = 0b01011000, // 58  Hz at 960 ODR
+//     bw_med         = 0b01001000, // 100 Hz at 960 ODR  <--- Choosing This Default
+//     bw_high        = 0b00011000  // 310 Hz at 960 ODR
+// };
 
 // ctrl6_g
-enum class fs_g : uint8_t
+typedef enum
 {
-    dps_250        = 0b00001001,
-    dps_500        = 0b00001010,
-    dps_1000       = 0b00001011,
-    dps_2000       = 0b00001100,
-    dps_4000       = 0b00001101
-};
+    LSM6DSV80X_G_BW_LOW         = 0b01011000, // 58  Hz at 960 ODR
+    LSM6DSV80X_G_BW_MED         = 0b01001000, // 100 Hz at 960 ODR  <--- Choosing This Default
+    LSM6DSV80X_G_BW_HIGH        = 0b00011000  // 310 Hz at 960 ODR
+} lsm6dsv80x_g_lpf1_t;
+
+// ctrl6_g
+// enum class fs_g : uint8_t
+// {
+//     dps_250        = 0b00001001,
+//     dps_500        = 0b00001010,
+//     dps_1000       = 0b00001011,
+//     dps_2000       = 0b00001100,
+//     dps_4000       = 0b00001101
+// };
+
+// ctrl6_g
+typedef enum
+{
+    LSM6DSV80X_G_DPS_250        = 0b00001001,
+    LSM6DSV80X_G_DPS_500        = 0b00001010,
+    LSM6DSV80X_G_DPS_1000       = 0b00001011,
+    LSM6DSV80X_G_DPS_2000       = 0b00001100,
+    LSM6DSV80X_G_DPS_4000       = 0b00001101
+} lsm6dsv80x_g_fs;
 
 // ctrl8_xl - assumes LPF2_XL_EN enabled.
-enum class lpf1_xl : uint8_t
+// enum class lpf1_xl : uint8_t
+// {
+//     bw_ODR4         = 0b00000000,
+//     bw_ODR10        = 0b00100000,
+//     bw_ODR20        = 0b01000000,
+//     bw_ODR45        = 0b01100000,
+//     bw_ODR100       = 0b10000000,
+//     bw_ODR200       = 0b10100000,
+//     bw_ODR400       = 0b11000000,
+//     bw_ODR800       = 0b11100000
+// };
+
+// ctrl8_xl - assumes LPF2_XL_EN enabled.
+typedef enum
 {
-    bw_ODR4         = 0b00000000,
-    bw_ODR10        = 0b00100000,
-    bw_ODR20        = 0b01000000,
-    bw_ODR45        = 0b01100000,
-    bw_ODR100       = 0b10000000,
-    bw_ODR200       = 0b10100000,
-    bw_ODR400       = 0b11000000,
-    bw_ODR800       = 0b11100000
-};
+    LSM6DSV80X_XL_BW_ODR4         = 0b00000000,
+    LSM6DSV80X_XL_BW_ODR10        = 0b00100000,
+    LSM6DSV80X_XL_BW_ODR20        = 0b01000000,
+    LSM6DSV80X_XL_BW_ODR45        = 0b01100000,
+    LSM6DSV80X_XL_BW_ODR100       = 0b10000000,
+    LSM6DSV80X_XL_BW_ODR200       = 0b10100000,
+    LSM6DSV80X_XL_BW_ODR400       = 0b11000000,
+    LSM6DSV80X_XL_BW_ODR800       = 0b11100000
+} lsm6dsv80x_xl_lpf1_t;
 
 // ctrl8_xl
-enum class fs_xl : uint8_t
+// enum class fs_xl : uint8_t
+// {
+//     _2g            = 0b00000000,
+//     _4g            = 0b00000001,
+//     _8g            = 0b00000010,
+//     _16g           = 0b00000011
+// };
+
+typedef enum
 {
-    _2g            = 0b00000000,
-    _4g            = 0b00000001,
-    _8g            = 0b00000010,
-    _16g           = 0b00000011
-};
+    LSM6DSV80X_XL__2g            = 0b00000000,
+    LSM6DSV80X_XL__4g            = 0b00000001,
+    LSM6DSV80X_XL__8g            = 0b00000010,
+    LSM6DSV80X_XL__16g           = 0b00000011
+} lsm6dsv80x_xl_fs_t;
 
 // ctrl9_xl
-enum class ctrl9 : uint8_t
-{
-    lpf2_xl_en     = 0b00001000,
-    usr_off_en     = 0b00000010  // FOR HG_XL | 0: 2e-10 g/LSB |  1: 2e-6 g/LSB 
-};
+// enum class ctrl9 : uint8_t
+// {
+//     lpf2_xl_en     = 0b00001000,
+//     usr_off_en     = 0b00000010  // FOR HG_XL | 0: 2e-10 g/LSB |  1: 2e-6 g/LSB 
+// };
 
-//
+// ctrl9_xl
+typedef enum
+{
+    LSM6DSV80X_LPF2_XL_EN     = 0b00001000,
+    LSM6DSV80X_USR_OFF_EN     = 0b00000010  // FOR HG_XL | 0: 2e-10 g/LSB |  1: 2e-6 g/LSB 
+} lsm6dsv80x_xl_ctrl9_t;
 
 
 bool LSM6DSV80X::begin() {
