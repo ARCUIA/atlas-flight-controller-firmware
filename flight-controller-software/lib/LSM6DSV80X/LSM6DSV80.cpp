@@ -1,15 +1,17 @@
 #include "LSM6DSV80X.h"
 
 #define WHOAMI_REG   0x0F
-#define OUT_TEMP_L   0x20  // start of 14 byte output register sequence
 
 #define ctrl1_xl     0x10
 #define ctrl2_g      0x11
 #define ctrl6_g      0x15  // bw and full rate
+#define ctrl8_xl     0x17  // bw and full rate
+#define ctrl9_xl     0x18  // xl filtering and cal offset weighting
 
+#define OUT_TEMP_L   0x20  // start of 14 byte output register sequence
 
 // ctrl1_xl
-enum class xl_op_mode
+enum class xl_op_mode : uint8_t
 {
     high_perform   = 0b0000000,  // default
     high_accuracy  = 0b0001000, 
@@ -17,7 +19,7 @@ enum class xl_op_mode
 };
 
 // ctrl1_xl
-enum class xl_odr
+enum class xl_odr : uint8_t
 {
     power_down     = 0b00000000, // default
     odr_240        = 0b00000111,
@@ -26,14 +28,14 @@ enum class xl_odr
 };
 
 // ctrl2_g
-enum class g_op_mode
+enum class g_op_mode : uint8_t
 {
     high_perform   = 0b00000000, // default
     high_accuracy  = 0b00010000
 };
 
 // ctrl2_g
-enum class g_odr
+enum class g_odr : uint8_t
 {
     power_down     = 0b00000000, // default
     odr_240        = 0b00000111,
@@ -42,7 +44,7 @@ enum class g_odr
 };
 
 // ctrl6_g
-enum class lpf1_g
+enum class lpf1_g : uint8_t
 {
     bw_low         = 0b01010000, // 58  Hz at 960 ODR
     bw_med         = 0b01000000, // 100 Hz at 960 ODR  <--- Choosing This Default
@@ -50,10 +52,46 @@ enum class lpf1_g
 };
 
 // ctrl6_g
-enum class fs_g
+enum class fs_g : uint8_t
 {
-    
+    dps_250        = 0b00000001,
+    dps_500        = 0b00000010,
+    dps_1000       = 0b00000011,
+    dps_2000       = 0b00000100,
+    dps_4000       = 0b00000101
 };
+
+// ctrl8_xl - assumes LPF2_XL_EN enabled.
+enum class lpf1_xl : uint8_t
+{
+    bw_ODR4         = 0b00000000,
+    bw_ODR10        = 0b00100000,
+    bw_ODR20        = 0b01000000,
+    bw_ODR45        = 0b01100000,
+    bw_ODR100       = 0b10000000,
+    bw_ODR200       = 0b10100000,
+    bw_ODR400       = 0b11000000,
+    bw_ODR800       = 0b11100000
+};
+
+// ctrl8_xl
+enum class fs_xl : uint8_t
+{
+    _2g            = 0b00000000,
+    _4g            = 0b00000001,
+    _8g            = 0b00000010,
+    _16g           = 0b00000011
+};
+
+// ctrl9_xl
+enum class ctrl9 : uint8_t
+{
+    lpf2_xl_en     = 0b00001000,
+    usr_off_en     = 0b00000010  // FOR HG_XL | 0: 2e-10 g/LSB |  1: 2e-6 g/LSB 
+};
+
+//
+
 
 bool LSM6DSV80X::begin() {
     
