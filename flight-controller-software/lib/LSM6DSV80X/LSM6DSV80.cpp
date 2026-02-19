@@ -3,7 +3,12 @@
 #define WHOAMI_REG   0x0F
 #define OUT_TEMP_L   0x20  // start of 14 byte output register sequence
 
+#define ctrl1_xl     0x10
+#define ctrl2_g      0x11
+#define ctrl6_g      0x15  // bw and full rate
 
+
+// ctrl1_xl
 enum class xl_op_mode
 {
     high_perform   = 0b0000000,  // default
@@ -11,6 +16,7 @@ enum class xl_op_mode
     normal         = 0b0111000  
 };
 
+// ctrl1_xl
 enum class xl_odr
 {
     power_down     = 0b00000000, // default
@@ -19,20 +25,35 @@ enum class xl_odr
     odr_960        = 0b00001001
 };
 
+// ctrl2_g
 enum class g_op_mode
 {
     high_perform   = 0b00000000, // default
     high_accuracy  = 0b00010000
 };
 
+// ctrl2_g
 enum class g_odr
 {
-    power_down     = 0b00000000, //default
+    power_down     = 0b00000000, // default
     odr_240        = 0b00000111,
     odr_480        = 0b00001000,
     odr_960        = 0b00001001
 };
- 
+
+// ctrl6_g
+enum class lpf1_g
+{
+    bw_low         = 0b01010000, // 58  Hz at 960 ODR
+    bw_med         = 0b01000000, // 100 Hz at 960 ODR  <--- Choosing This Default
+    bw_high        = 0b00010000  // 310 Hz at 960 ODR
+};
+
+// ctrl6_g
+enum class fs_g
+{
+    
+};
 
 bool LSM6DSV80X::begin() {
     
