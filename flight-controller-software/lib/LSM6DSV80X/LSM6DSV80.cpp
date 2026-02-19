@@ -7,7 +7,7 @@
 #define ctrl1_xl     0x10
 #define ctrl2_g      0x11
 #define ctrl3        0x12  // SW reset at pin 1 and BDU at pin 6 (need BDU on)
-#define ctrl6_g      0x15  // bw and full rate
+#define ctrl6_g      0x15  // bw and full rate | BIT 4 NEEDS TO BE 1
 #define ctrl8_xl     0x17  // bw and full rate
 #define ctrl9_xl     0x18  // xl filtering and cal offset weighting
 
@@ -16,22 +16,23 @@
 #define OUTX_L_A     0x28  // start of acc xlh>ylh>zlh
 
 
-// ctrl1_xl
-enum class xl_op_mode : uint8_t
-{
-    high_perform   = 0b0000000,  // default
-    high_accuracy  = 0b0001000, 
-    normal         = 0b0111000  
-};
 
 // ctrl1_xl
-enum class xl_odr : uint8_t
+typedef enum
 {
-    power_down     = 0b00000000, // default
-    odr_240        = 0b00000111,
-    odr_480        = 0b00001000,
-    odr_960        = 0b00001001
-};
+    LSM6DSV80X_XL_HIGH_PERFORM   = 0b0000000,  // default
+    LSM6DSV80X_XL_HIGH_ACCURACY  = 0b0001000, 
+    LSM6DSV80X_XL_NORMAL         = 0b0111000
+} lsm6dsv80x_xl_op_mode_t;
+
+// ctrl1_xl
+typedef enum xl_odr
+{
+    LSM6DSV80X_XL_POWER_DOWN     = 0b00000000, // default
+    LSM6DSV80X_XL_240_ODR        = 0b00000111,
+    LSM6DSV80X_XL_480_ODR        = 0b00001000,
+    LSM6DSV80X_XL_960_ORD        = 0b00001001
+} lsm6dsv80x_xl_odr_t;
 
 // ctrl2_g
 enum class g_op_mode : uint8_t
@@ -59,19 +60,19 @@ enum class ctrl3_enum : uint8_t
 // ctrl6_g
 enum class lpf1_g : uint8_t
 {
-    bw_low         = 0b01010000, // 58  Hz at 960 ODR
-    bw_med         = 0b01000000, // 100 Hz at 960 ODR  <--- Choosing This Default
-    bw_high        = 0b00010000  // 310 Hz at 960 ODR
+    bw_low         = 0b01011000, // 58  Hz at 960 ODR
+    bw_med         = 0b01001000, // 100 Hz at 960 ODR  <--- Choosing This Default
+    bw_high        = 0b00011000  // 310 Hz at 960 ODR
 };
 
 // ctrl6_g
 enum class fs_g : uint8_t
 {
-    dps_250        = 0b00000001,
-    dps_500        = 0b00000010,
-    dps_1000       = 0b00000011,
-    dps_2000       = 0b00000100,
-    dps_4000       = 0b00000101
+    dps_250        = 0b00001001,
+    dps_500        = 0b00001010,
+    dps_1000       = 0b00001011,
+    dps_2000       = 0b00001100,
+    dps_4000       = 0b00001101
 };
 
 // ctrl8_xl - assumes LPF2_XL_EN enabled.
@@ -117,9 +118,15 @@ bool LSM6DSV80X::begin() {
 
 
     uint8_t temp_reg = 0;
+    uint8_t write_byte = 0;
+
+    // Config Acc
+    _bus.write(ctrl1_xl, (xl_op_mode::high_accuracy)|(xl_odr::odr_240));
 
     // Config Gyro 
     _bus.read();
+
+
     // need to configure default ranges and odr
     // GYRO Want 960 Hz ODR if SPI, 480 Hz ODR if I2C
     // Want ODR/2 Bandwidth for noise reduction
