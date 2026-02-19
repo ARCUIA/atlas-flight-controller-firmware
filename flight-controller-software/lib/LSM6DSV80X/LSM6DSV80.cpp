@@ -1,14 +1,20 @@
 #include "LSM6DSV80X.h"
 
+#define CLEAR        0x00  // To clear registers before writing
+
 #define WHOAMI_REG   0x0F
 
 #define ctrl1_xl     0x10
 #define ctrl2_g      0x11
+#define ctrl3        0x12  // SW reset at pin 1 and BDU at pin 6 (need BDU on)
 #define ctrl6_g      0x15  // bw and full rate
 #define ctrl8_xl     0x17  // bw and full rate
 #define ctrl9_xl     0x18  // xl filtering and cal offset weighting
 
 #define OUT_TEMP_L   0x20  // start of 14 byte output register sequence
+#define OUTX_L_G     0x22  // start of gyro xlh>ylh>zlh
+#define OUTX_L_A     0x28  // start of acc xlh>ylh>zlh
+
 
 // ctrl1_xl
 enum class xl_op_mode : uint8_t
@@ -41,6 +47,13 @@ enum class g_odr : uint8_t
     odr_240        = 0b00000111,
     odr_480        = 0b00001000,
     odr_960        = 0b00001001
+};
+
+// ctrl3
+enum class ctrl3_enum : uint8_t
+{
+    bdu_en         = 0b01000000, // Only update low and high byte after both are read
+    sw_reset       = 0b00000001  // Reset everything to default settings
 };
 
 // ctrl6_g
@@ -94,13 +107,23 @@ enum class ctrl9 : uint8_t
 
 
 bool LSM6DSV80X::begin() {
-    
+
     _bus.begin(); // I2C or SPI depending on implementation
 
+    // Reset Sensor Fully, Start Fresh, block for 1000 us
+    uint8_t reset = (uint8_t)ctrl3_enum::sw_reset;
+    _bus.write(ctrl3, reset);
+    _time.delay_us(1000);
+
+
+    uint8_t temp_reg = 0;
+
+    // Config Gyro 
+    _bus.read();
     // need to configure default ranges and odr
-    // Want 1000 Hz ODR if SPI, 500 Hz ODR if I2C 
+    // GYRO Want 960 Hz ODR if SPI, 480 Hz ODR if I2C
     // Want ODR/2 Bandwidth for noise reduction
-    // Gyro Range
+    // Gyro Range +/- 2000 dps
     // Accel Range of +/- 16g
 }
 
