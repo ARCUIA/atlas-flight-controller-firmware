@@ -25,6 +25,7 @@ class LSM6DSV80X {
 
         bool begin();
         bool read(IMU_Data& data);
+        void cal_ZRL_Gyro(float gcal[], int size);  // Can store the cal in the IMU itself, just returning values for now
 
     private :
         IBus& _bus;

@@ -29,9 +29,9 @@ typedef enum
 typedef enum
 {
     LSM6DSV80X_XL_POWER_DOWN     = 0b00000000, // default
-    LSM6DSV80X_XL_240_ODR        = 0b00000111,
-    LSM6DSV80X_XL_480_ODR        = 0b00001000,
-    LSM6DSV80X_XL_960_ODR        = 0b00001001
+    LSM6DSV80X_XL_ODR_240        = 0b00000111,
+    LSM6DSV80X_XL_ODR_480        = 0b00001000,
+    LSM6DSV80X_XL_ODR_960        = 0b00001001
 } lsm6dsv80x_xl_odr_t;
 
 // ctrl2_g
@@ -151,12 +151,13 @@ typedef enum
 //     _16g           = 0b00000011
 // };
 
+// ctrl8_xl
 typedef enum
 {
-    LSM6DSV80X_XL__2g            = 0b00000000,
-    LSM6DSV80X_XL__4g            = 0b00000001,
-    LSM6DSV80X_XL__8g            = 0b00000010,
-    LSM6DSV80X_XL__16g           = 0b00000011
+    LSM6DSV80X_XL_2g            = 0b00000000,
+    LSM6DSV80X_XL_4g            = 0b00000001,
+    LSM6DSV80X_XL_8g            = 0b00000010,
+    LSM6DSV80X_XL_16g           = 0b00000011
 } lsm6dsv80x_xl_fs_t;
 
 // ctrl9_xl
@@ -179,24 +180,20 @@ bool LSM6DSV80X::begin() {
     _bus.begin(); // I2C or SPI depending on implementation
 
     // Reset Sensor Fully, Start Fresh, block for 1000 us
-    uint8_t reset = (uint8_t)ctrl3_enum::sw_reset;
-    _bus.write(ctrl3, reset);
+    _bus.write(ctrl3, LSM6DSV80X_SW_RESET);
     _time.delay_us(1000);
 
+    // Config XL
+    _bus.write(ctrl8_xl, LSM6DSV80X_XL_BW_ODR100 | LSM6DSV80X_XL_16g);
+    _bus.write(ctrl1_xl, LSM6DSV80X_XL_HIGH_ACCURACY | LSM6DSV80X_XL_ODR_240);
 
-    uint8_t temp_reg = 0;
-    uint8_t write_byte = 0;
-
-    // Config Acc
-    _bus.write(ctrl1_xl, (xl_op_mode::high_accuracy)|(xl_odr::odr_240));
-
-    // Config Gyro 
-    _bus.read();
-
+    // Config Gyro
+    _bus.write(ctrl6_g, LSM6DSV80X_G_BW_MED | LSM6DSV80X_G_DPS_2000);
+    _bus.write(ctrl2_g, LSM6DSV80X_G_HIGH_PERFORMANCE | LSM6DSV80X_G_ODR_960);
 
     // need to configure default ranges and odr
     // GYRO Want 960 Hz ODR if SPI, 480 Hz ODR if I2C
-    // Want ODR/2 Bandwidth for noise reduction
+    // Want LPF for noise reduction.
     // Gyro Range +/- 2000 dps
     // Accel Range of +/- 16g
 }
@@ -222,4 +219,20 @@ bool LSM6DSV80X::read(IMU_Data& data) {
     data.ay          = (buf[11] << 8) | buf[10];
     data.az          = (buf[13] << 8) | buf[12];
     data.time        = time;
+}
+
+void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
+    
+    
+    const uint8_t buf_len = 6;
+    uint8_t buf[buf_len] = {};
+    int32_t x, y, z = 0;
+
+    // Reading Gyro Values
+    for (int i = 0; i < 500; i++) {
+        _bus.read(OUTX_L_G, buf, buf_len);
+        x += (buf[1] << 8) | buf[0];
+        y += (buf[3] << 8) | buf[2];
+        z += (buf[5] << 8) | buf[4];
+    }
 }
