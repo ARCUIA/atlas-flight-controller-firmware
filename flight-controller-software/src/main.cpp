@@ -19,6 +19,9 @@
 #include "startup.hpp"
 #include "myEnums.hpp"
 #include "sd_handler.hpp"
+#include "../lib/LSM6DSV80X/LSM6DSV80X.h"
+#include "../lib/Platform_Teensy/TeensyTime.hpp"
+#include "../lib/Platform_Teensy/I2CBus.hpp"
 
 // Pins
 const int ssPin = 10;
@@ -31,8 +34,15 @@ uint32_t now = micros();
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
+LSM6DSV80X::IMU_Data imu_data;
+
 // Create Objects Here
+I2CBus imu_bus(Wire,0x6A);
+
+
+TeensyTime time;
 Adafruit_LIS2MDL mag;
+LSM6DSV80X imu(imu_bus, time);
 flightState state;
 controlType controls = controlType::CANARDS;
 
@@ -47,12 +57,19 @@ void setup()
   Serial1.begin(57600); // GPS
   Serial7.begin(57600); // Radio, default speed up if needed for timing.
   initSD(ssPin); // Returns Error if Failed.
+
+  imu.begin();
 }
 
 void loop() {
   now = micros();
 
   if (now - prev >= DELAY) {
+
+    // Just here to test, remove later
+    imu.read(imu_data);
+
+    
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
         break;

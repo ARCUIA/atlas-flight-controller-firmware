@@ -235,4 +235,5 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         y += (buf[3] << 8) | buf[2];
         z += (buf[5] << 8) | buf[4];
     }
+    
 }
