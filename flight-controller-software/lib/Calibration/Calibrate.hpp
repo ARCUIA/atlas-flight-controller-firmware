@@ -29,7 +29,7 @@ public:
     }
 
 
-    void get_accelerometer_offset(float accel_offsets[3], float gyro_offsets[3]) {
+    void get_offsets(float accel_offsets[3], float gyro_offsets[3]) {
         TeensyTime time;
 
         float accel_x = 0.0f;
