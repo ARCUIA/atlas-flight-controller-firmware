@@ -175,6 +175,32 @@ typedef enum
 } lsm6dsv80x_xl_ctrl9_t;
 
 
+/*
+typedef enum
+{
+    LSM6DSV80X_SFLP_GBIASX_L = 0b00011000,
+    LSM6DSV80X_SFLP_GBIASX_H = 0b00011001,
+    LSM6DSV80X_SFLP_GBIASY_L = 0b00011010,
+    LSM6DSV80X_SFLP_GBIASY_H = 0b00011011,
+    LSM6DSV80X_SFLP_GBIASZ_L = 0b00011100,
+    LSM6DSV80X_SFLP_GBIASZ_H = 0b00011101
+
+} lsm6dsv80x_g_sflp_bias_t;
+
+
+typedef enum
+{
+    LSM6DSV80X_SFLP_GBIASX_INIT_L = 0b00110010,
+    LSM6DSV80X_SFLP_GBIASX_INIT_H = 0b00110011,
+    LSM6DSV80X_SFLP_GBIASY_INIT_L = 0b00110100,
+    LSM6DSV80X_SFLP_GBIASY_INIT_H = 0b00110101,
+    LSM6DSV80X_SFLP_GBIASZ_INIT_L = 0b00110110,
+    LSM6DSV80X_SFLP_GBIASZ_INIT_H = 0b00110111
+} lsm6dsv80x_g_sflp_bias_init_t;
+
+*/
+
+
 bool LSM6DSV80X::begin() {
 
     _bus.begin(); // I2C or SPI depending on implementation
@@ -223,7 +249,6 @@ bool LSM6DSV80X::read(IMU_Data& data) {
 
 void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
     
-    
     const uint8_t buf_len = 6;
     uint8_t buf[buf_len] = {};
     int32_t x, y, z = 0;
@@ -235,7 +260,8 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         y += (buf[3] << 8) | buf[2];
         z += (buf[5] << 8) | buf[4];
     }
-    
 }
+
+
 
 
