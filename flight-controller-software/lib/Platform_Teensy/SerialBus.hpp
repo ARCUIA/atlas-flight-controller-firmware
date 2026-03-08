@@ -1,3 +1,6 @@
+#ifndef Calibrate_H
+#define Calibrate_H
+
 #include "../LSM6DSV80X/LSM6DSV80X.h"
 #include "../Platform_Teensy/TeensyTime.hpp"
 
@@ -10,9 +13,6 @@
 #include <array>
 #include <cmath>
 
-#ifndef Calibrate_H
-#define Calibrate_H
-
 #define SERIAL_TERMINAL_BAUD_RATE 115200
 #define CALIBRATION_TIME_DELAY 100000
 #define ACCEL_STATIONARY_EXPECTED_VALUE 1.0f
@@ -23,10 +23,9 @@ class Calibrate {
 public:
     const char axis_to_align[AXIS_NUM] = {'x', 'y', 'z', 'X', 'Y', 'Z'};
 
-    Calibrate(SerialBus serial, LSM6DSV80X imu) : _imu(imu), _serial(serial) {
+    Calibrate(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _serial(serial) {
         Serial.begin(SERIAL_TERMINAL_BAUD_RATE);
     }
-
 
     void get_offsets(float accel_offsets[3], float gyro_offsets[3]) {
         TeensyTime time;
@@ -69,6 +68,7 @@ public:
                         count_z++;
                         break;
                 }
+
                 time.delay_us(CALIBRATION_TIME_DELAY);
             }
         }
@@ -82,53 +82,53 @@ public:
         gyro_offsets[2] = gyro_z / count_z;
     }
 
-
 private:
-    LSM6DSV80X _imu;
-    SerialBus _serial;
+    LSM6DSV80X& _imu;
+    SerialBus& _serial;
     LSM6DSV80X::IMU_Data imu_data;
 
     void _align_axis_prompt(char axis) {
-        _bus.print("Align the IMU along its ");
+        _serial.send_message((char*)"Align the IMU along its ");
 
         switch (axis) {
             case 'x':
-              Serial.print("+X");
-              break;
-            case 'y': 
-                Serial.print("+Y");
+                _serial.send_message((char*)"+X");
+                break;
+            case 'y':
+                _serial.send_message((char*)"+Y");
                 break;
             case 'z':
-                Serial.print("+Z");
+                _serial.send_message((char*)"+Z");
                 break;
-            case 'X': 
-                Serial.print("-X");
+            case 'X':
+                _serial.send_message((char*)"-X");
                 break;
             case 'Y':
-                Serial.print("-Y");
+                _serial.send_message((char*)"-Y");
                 break;
             case 'Z':
-                Serial.print("-Z");
+                _serial.send_message((char*)"-Z");
                 break;
         }
 
-        _serial.send_message(" axis, then press any key.");
+        _serial.send_message((char*)" axis, then press any key.\n");
 
         TeensyTime time;
 
         while (!_serial.available()) {
-            _serial.send_bytes((uint8_t*) &imu_data, sizeof(imu_data)); 
+            _serial.send_bytes((uint8_t*)&imu_data, sizeof(imu_data));
             time.delay_us(CALIBRATION_TIME_DELAY);
         }
 
+        uint8_t dummy;
         while (_serial.available()) {
-            _serial.read(0, );
+            _serial.read(0, &dummy, 1);
         }
     }
 
     char _to_lowercase(char c) {
         if (c >= 'A' && c <= 'Z') {
-            return c - 'A' + 'a'; // Add a so that the result is ascii a + the offset
+            return c - 'A' + 'a';
         }
         return c;
     }
