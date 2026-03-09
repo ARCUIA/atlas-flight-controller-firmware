@@ -10,13 +10,10 @@ public:
     SerialBus(int rx_pin, int tx_pin, int baud_rate) : _serial(rx_pin, tx_pin), _baud_rate(baud_rate) {}
 
     bool write(uint8_t reg, uint8_t value) override {
-        (void)reg;
         return _serial.write(value) == 1;
     }
 
     bool read(uint8_t reg, uint8_t* buffer, uint8_t length) override {
-        (void)reg;
-
         if (!_serial.available()) {
             return false;
         }
