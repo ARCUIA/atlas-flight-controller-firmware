@@ -20,7 +20,8 @@ public:
 
         uint8_t count = 0;
         while (count < length && _serial.available()) {
-            buffer[count++] = _serial.read();
+            buffer[count] = _serial.read();
+            count++;
         }
 
         return count == length;
