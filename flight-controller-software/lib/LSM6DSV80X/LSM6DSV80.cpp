@@ -16,7 +16,6 @@
 #define OUTX_L_A     0x28  // start of acc xlh>ylh>zlh
 
 
-
 // ctrl1_xl
 typedef enum
 {
@@ -175,30 +174,6 @@ typedef enum
 } lsm6dsv80x_xl_ctrl9_t;
 
 
-/*
-typedef enum
-{
-    LSM6DSV80X_SFLP_GBIASX_L = 0b00011000,
-    LSM6DSV80X_SFLP_GBIASX_H = 0b00011001,
-    LSM6DSV80X_SFLP_GBIASY_L = 0b00011010,
-    LSM6DSV80X_SFLP_GBIASY_H = 0b00011011,
-    LSM6DSV80X_SFLP_GBIASZ_L = 0b00011100,
-    LSM6DSV80X_SFLP_GBIASZ_H = 0b00011101
-
-} lsm6dsv80x_g_sflp_bias_t;
-
-
-typedef enum
-{
-    LSM6DSV80X_SFLP_GBIASX_INIT_L = 0b00110010,
-    LSM6DSV80X_SFLP_GBIASX_INIT_H = 0b00110011,
-    LSM6DSV80X_SFLP_GBIASY_INIT_L = 0b00110100,
-    LSM6DSV80X_SFLP_GBIASY_INIT_H = 0b00110101,
-    LSM6DSV80X_SFLP_GBIASZ_INIT_L = 0b00110110,
-    LSM6DSV80X_SFLP_GBIASZ_INIT_H = 0b00110111
-} lsm6dsv80x_g_sflp_bias_init_t;
-
-*/
 
 
 bool LSM6DSV80X::begin() {
@@ -261,6 +236,7 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         z += (buf[5] << 8) | buf[4];
     }
 }
+
 
 
 
