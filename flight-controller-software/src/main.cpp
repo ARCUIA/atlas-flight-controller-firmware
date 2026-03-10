@@ -22,6 +22,7 @@
 #include "../lib/LSM6DSV80X/LSM6DSV80X.h"
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
 #include "../lib/Platform_Teensy/I2CBus.hpp"
+#include "../lib/Calibration/Calibrate.hpp"
 
 // Pins
 const int ssPin = 10;
@@ -39,10 +40,9 @@ LSM6DSV80X::IMU_Data imu_data;
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
 
-
-TeensyTime time;
+TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
-LSM6DSV80X imu(imu_bus, time);
+LSM6DSV80X imu(imu_bus, imu_time);
 flightState state;
 controlType controls = controlType::CANARDS;
 
@@ -56,7 +56,7 @@ void setup()
   Wire.begin();
   Serial1.begin(57600); // GPS
   Serial7.begin(57600); // Radio, default speed up if needed for timing.
-  initSD(ssPin); // Returns Error if Failed.
+  initSD(ssPin); // Returns Error if Failed.      
 
   imu.begin();
 }

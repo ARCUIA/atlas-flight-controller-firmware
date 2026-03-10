@@ -16,7 +16,6 @@
 #define OUTX_L_A     0x28  // start of acc xlh>ylh>zlh
 
 
-
 // ctrl1_xl
 typedef enum
 {
@@ -175,6 +174,8 @@ typedef enum
 } lsm6dsv80x_xl_ctrl9_t;
 
 
+
+
 bool LSM6DSV80X::begin() {
 
     _bus.begin(); // I2C or SPI depending on implementation
@@ -223,7 +224,6 @@ bool LSM6DSV80X::read(IMU_Data& data) {
 
 void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
     
-    
     const uint8_t buf_len = 6;
     uint8_t buf[buf_len] = {};
     int32_t x, y, z = 0;
@@ -235,5 +235,9 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         y += (buf[3] << 8) | buf[2];
         z += (buf[5] << 8) | buf[4];
     }
-    
 }
+
+
+
+
+
