@@ -22,7 +22,7 @@
 #include "../lib/LSM6DSV80X/LSM6DSV80X.h"
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
 #include "../lib/Platform_Teensy/I2CBus.hpp"
-#include "../lib/Calibration/Calibrate.hpp"
+#include "../lib/Ahrs/Calibration.h"
 
 // Pins
 const int ssPin = 10;
