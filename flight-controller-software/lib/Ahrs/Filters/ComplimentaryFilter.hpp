@@ -26,7 +26,7 @@ public:
 private:
     float accelerometer_weight;
     float gyroscope_weight;
-    uint32_t last_timer_value;
+    uint32_t last_timer_value = timer.now_us();
 };
 
 #endif
