@@ -12,6 +12,7 @@
 
 class Filter {
 public:
+
     virtual ~Filter() = default;
 
     struct Prediction {
@@ -40,6 +41,9 @@ public:
     };
 
     virtual bool update(Prediction& prediction, const Measurements& measurements) = 0;
+
+    protected:
+        TeensyTime timer; // I know they say not to use protected in software design but I dont care
 };
 
 #endif

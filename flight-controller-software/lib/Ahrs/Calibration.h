@@ -28,10 +28,9 @@ public:
         float gz = 0.0f;
     };
 
-    Calibration(SerialBus& serial, LSM6DSV80X& imu);
-
+    
+    Calibration(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _serial(serial) {}
     void get_offsets(Offsets& offsets);
-
     static void apply_offsets(const Offsets& offsets, LSM6DSV80X::IMU_Data& imu_data);
 
 private:
@@ -40,6 +39,7 @@ private:
     LSM6DSV80X& _imu;
     SerialBus& _serial;
     LSM6DSV80X::IMU_Data imu_data;
+    TeensyTime timer;
 
     void _align_axis_prompt(char axis);
 };

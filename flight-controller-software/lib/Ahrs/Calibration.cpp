@@ -4,7 +4,7 @@ Calibration::Calibration(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _seria
 
 
 void Calibration::get_offsets(Offsets& offsets) {
-    TeensyTime time;
+
 
     float accel_x = 0.0f;
     float accel_y = 0.0f;
@@ -63,7 +63,7 @@ void Calibration::get_offsets(Offsets& offsets) {
                     break;
             }
 
-            time.delay_us(CALIBRATION_TIME_DELAY);
+            timer.delay_us(CALIBRATION_TIME_DELAY);
         }
     }
 
