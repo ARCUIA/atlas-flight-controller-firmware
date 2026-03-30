@@ -1,18 +1,21 @@
 #ifndef COMPLEMENTARY_HPP
 #define COMPLEMENTARY_HPP
 
+#define RAD_TO_DEG 57.29578f
+
 #include <cmath>
 #include "../Filter.h"
 
 class ComplementaryFilter : public Filter {
 
 public:
-    ComplementaryFilter(float a_weight, float g_weight) : Filter(), accelerometer_weight(a_weight), gyroscope_weight(g_weight) {}
+    ComplementaryFilter(float a_weight, float g_weight) : Filter(), accelerometer_weight(a_weight), gyroscope_weight(g_weight) {
+        last_timer_value = timer.now_us();
+    }
 
     bool update(Prediction& prediction, const Measurements& measurements) override {
 
-        float accelerometer_predicted_roll = atan2(measurements.imu.ay, measurements.imu.az);
-
+        float accelerometer_predicted_roll = atan2(measurements.imu.ay, measurements.imu.az) * RAD_TO_DEG;
         uint32_t current_timer_value = timer.now_us();
         uint32_t time_elapsed = current_timer_value - last_timer_value;
         last_timer_value = current_timer_value;
@@ -26,7 +29,7 @@ public:
 private:
     float accelerometer_weight;
     float gyroscope_weight;
-    uint32_t last_timer_value = timer.now_us();
+    uint32_t last_timer_value;
 };
 
 #endif
