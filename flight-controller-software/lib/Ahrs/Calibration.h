@@ -29,7 +29,7 @@ public:
     };
 
     
-    Calibration(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _serial(serial) {}
+    Calibration(SerialBus& serial, LSM6DSV80X& imu);
     void get_offsets(Offsets& offsets);
     static void apply_offsets(const Offsets& offsets, LSM6DSV80X::IMU_Data& imu_data);
 

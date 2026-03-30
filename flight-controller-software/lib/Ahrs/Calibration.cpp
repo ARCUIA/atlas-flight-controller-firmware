@@ -1,6 +1,8 @@
 #include "Calibration.h"
 
-Calibration::Calibration(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _serial(serial) {};
+Calibration::Calibration(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _serial(serial) {
+    _serial.begin();
+};
 
 
 void Calibration::get_offsets(Offsets& offsets) {
