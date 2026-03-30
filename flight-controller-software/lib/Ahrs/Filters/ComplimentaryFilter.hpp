@@ -11,6 +11,9 @@ class ComplementaryFilter : public Filter {
 public:
     ComplementaryFilter(float a_weight, float g_weight) : Filter(), accelerometer_weight(a_weight), gyroscope_weight(g_weight) {
         last_timer_value = timer.now_us();
+        // Weights must add to 1
+        // In addition, assume that the data passed into this filter is already calibrated with Calibration::apply_offsets
+        
     }
 
     bool update(Prediction& prediction, const Measurements& measurements) override {
