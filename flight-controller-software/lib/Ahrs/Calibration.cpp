@@ -122,5 +122,4 @@ void Calibration::apply_offsets(const Offsets& offsets, LSM6DSV80X::IMU_Data& im
     imu_data.gx -= offsets.gx;
     imu_data.gy -= offsets.gy;
     imu_data.gz -= offsets.gz;
-    
 }
