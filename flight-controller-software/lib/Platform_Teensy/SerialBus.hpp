@@ -43,6 +43,7 @@ public:
         return _serial.available();
     }
 
+
 private:
     SoftwareSerial _serial;
     int _baud_rate;

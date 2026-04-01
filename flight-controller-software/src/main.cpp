@@ -30,6 +30,10 @@ const int ssPin = 10;
 const int RADIO_TX_PIN = -1; // TODO: put the actual pin number
 const int RADIO_RX_PIN = -1;
 
+const int GPS_TX_PIN = -1;
+const int GPS_RX_PIN = -1;
+
+const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 57600;
 
 // Declaring Constants Here
@@ -37,6 +41,22 @@ const uint32_t DELAY = 10000UL; // uS
 
 // Declaring Variables Here
 uint32_t now = micros();
+
+// Periods of when to do each action
+const int FILTER_PERIOD_US = -1;
+const int GPS_PERIOD_US = -1;
+const int MAG_PERIOD_US = -1; // TODO: Put the actual periods
+const int BARO_PERIOD_US = -1;
+const int PID_PERIOD_US = -1;
+const int RADIO_PERIOD_US = -1;
+
+// Starting times to decide when to do actions
+uint32_t time_filter_prev = now;
+uint32_t time_gps_prev = now;
+uint32_t time_mag_prev = now;
+uint32_t time_baro_prev = now;
+uint32_t time_pid_prev = now;
+
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
@@ -45,9 +65,14 @@ LSM6DSV80X::IMU_Data imu_data;
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
 SerialBus radio_bus(RADIO_RX_PIN, RADIO_TX_PIN, RADIO_BAUD_RATE);
+SerialBus gps_bus(GPS_RX_PIN, GPS_TX_PIN, GPS_BAUD_RATE);
 
 TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
+
+//I2CBus magnetometer;
+//I2CBus barometer;
+
 LSM6DSV80X imu(imu_bus, imu_time);
 flightState state;
 controlType controls = controlType::CANARDS;
@@ -60,12 +85,14 @@ void setup()
   
   // Com Busses
   Wire.begin();
-  radio_bus.begin();
-  
-  Serial1.begin(RADIO_BAUD_RATE); // GPS
+  radio_bus.begin(); // Radio
+  gps_bus.begin(); // GPS
+  imu.begin(); // IMU
+//  magnetometer.begin() // Magnetometer
+//  barometer.begin() // Barometer
+
   initSD(ssPin); // Returns Error if Failed.      
 
-  imu.begin();
 }
 
 void loop() {
@@ -83,26 +110,51 @@ void loop() {
       
       case flightState::POWERED_ASCENT:
         // Get I2C Data
+        if (now - time_mag_prev >= MAG_PERIOD_US) {
+            time_mag_prev += MAG_PERIOD_US;
+        }
+
+        if (now - time_baro_prev >= BARO_PERIOD_US) {
+            time_baro_prev += BARO_PERIOD_US;
+            // baro.read()
+        }
 
         // ===============
         //  TODO: Add in Drivers for sensors (LSM6DSV80X, LPS22HH)
         // ===============
 
-        // Check if GPS ready, skip otherwise
-        // if (GPS.available()){
-        //   // Read GPS
-        // }
+
+        if (gps_bus.available()) {
+            // read GPS bytes 
+            // Issue an interrupt ?
+        }
 
         // State Estimation
 
 
         // Control Systems
 
+        if (now - time_pid_prev >= PID_PERIOD_US) {
+          time_pid_prev += PID_PERIOD_US;
+          // PID.control()
+        }
+
+
 
         // Data Transmission
+        if (now - radio_filter_prev >= RADIO_PERIOD_US) {
+          time_filter_prev += FILTER_PERIOD_US;
+    // filter.predict/update
+        }
 
 
         // Data Logging
+
+        if (now - time_filter_prev >= FILTER_PERIOD_US) {
+          time_filter_prev += FILTER_PERIOD_US;
+    // filter.predict/update
+        }
+
 
 
         
