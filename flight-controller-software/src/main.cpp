@@ -27,6 +27,11 @@
 // Pins
 const int ssPin = 10;
 
+const int RADIO_TX_PIN = -1; // TODO: put the actual pin number
+const int RADIO_RX_PIN = -1;
+
+const int RADIO_BAUD_RATE = 57600;
+
 // Declaring Constants Here
 const uint32_t DELAY = 10000UL; // uS
 
@@ -39,6 +44,7 @@ LSM6DSV80X::IMU_Data imu_data;
 
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
+SerialBus radio_bus(RADIO_RX_PIN, RADIO_TX_PIN, RADIO_BAUD_RATE);
 
 TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
@@ -54,8 +60,9 @@ void setup()
   
   // Com Busses
   Wire.begin();
-  Serial1.begin(57600); // GPS
-  Serial7.begin(57600); // Radio, default speed up if needed for timing.
+  radio_bus.begin();
+  
+  Serial1.begin(RADIO_BAUD_RATE); // GPS
   initSD(ssPin); // Returns Error if Failed.      
 
   imu.begin();
@@ -96,6 +103,9 @@ void loop() {
 
 
         // Data Logging
+
+
+        
         break;
       case flightState::UNPOWERED_ASCENT:
         // Implement later
