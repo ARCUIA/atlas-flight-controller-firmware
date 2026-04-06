@@ -10,7 +10,7 @@ public:
 
     struct telemetry_packet {
         LSM6DSV80X::IMU_Data imu_data;
-        // Add more later if we need to transmit more
+        // Add more later if we need to transmit morei
     };
 
     RFD900XUS(SerialBus& radio_bus);

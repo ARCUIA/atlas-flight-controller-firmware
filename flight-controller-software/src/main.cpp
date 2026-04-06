@@ -5,6 +5,13 @@
  * @version 1.0.0
  */
 
+// TODO: Add driver / bus for SD card and add code to store data in SD card
+// TODO: Kalman filter?
+// TODO: Pitch and Yaw?
+// TODO: Actually test this
+// TODO: Drivers for barometer and magnetometer?
+
+
 // Libraries
 #include <Arduino.h>
 #include <Wire.h>
@@ -24,6 +31,8 @@
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
 #include "../lib/Platform_Teensy/I2CBus.hpp"
 #include "../lib/Ahrs/Calibration.h"
+#include "../lib/Ahrs/Filters/ComplimentaryFilter.hpp"
+#include "../lib/Ahrs/Filter.h"
 
 // Pins
 const int ssPin = 10;
@@ -50,6 +59,7 @@ const uint32_t MAG_PERIOD_US = -1; // TODO: Put the actual periods
 const uint32_t BARO_PERIOD_US = -1;
 const uint32_t PID_PERIOD_US = -1;
 const uint32_t RADIO_PERIOD_US = -1;
+const uint32_t SD_CARD_PERIOD_US = -1;
 
 // Starting times to decide when to do actions
 uint32_t time_filter_prev = now;
@@ -58,6 +68,7 @@ uint32_t time_mag_prev = now;
 uint32_t time_baro_prev = now;
 uint32_t time_pid_prev = now;
 uint32_t time_radio_prev = now;
+uint32_t time_sd_prev = now;
 
 uint32_t prev = now;
 float mag_dec = 0.0f;
@@ -79,6 +90,12 @@ RFD900XUS::telemetry_packet telemetry;
 LSM6DSV80X imu(imu_bus, imu_time);
 RFD900XUS radio(radio_bus);
 
+float g_weight = 0.5f;
+float a_weight = 0.5f;
+ComplementaryFilter filter(g_weight, a_weight);
+Filter::Prediction prediction;
+Filter::Measurements measurements;
+
 
 flightState state;
 controlType controls = controlType::CANARDS;
@@ -86,6 +103,7 @@ controlType controls = controlType::CANARDS;
 void setup()
 {
   // Keep Tests out of setup() in case of temp black/brownout.
+  prediction.roll = 0.0f; // Just so we dont grab a garbage value. There is code to ignore the first value of prediction.roll so this should be overwritten after we call filter.update
 
   mag_dec = get_mag_dec(launchSite::IOWA_CITY);
   
@@ -107,8 +125,9 @@ void loop() {
   if (now - prev >= DELAY) {
 
     // Just here to test, remove later
-    imu.read(imu_data); // imu_data will naturally be updates with the readings from the last imu measurement taken
+    imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
     telemetry.imu_data = imu_data; // for radio
+    measurements.imu = imu_data; // for filter
     
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
@@ -122,6 +141,7 @@ void loop() {
 
         if (now - time_baro_prev >= BARO_PERIOD_US) {
             time_baro_prev = micros();
+            
             // baro.read()
         }
 
@@ -141,26 +161,24 @@ void loop() {
         // Control Systems
 
         if (now - time_pid_prev >= PID_PERIOD_US) {
-          time_pid_prev =-micros();
-          radio_bus.send_bytes((uint8_t*)&imu_data, sizeof(imu_data));
-          // PID.control()
+          time_pid_prev = micros();
+          // PID.control(prediction.roll) <- maybe like this in the future?
         }
 
 
         // Data Transmission
         if (now - time_radio_prev >= RADIO_PERIOD_US) {
-          time_filter_prev = micros();
+          time_radio_prev = micros();
           radio.transmit_to_base_station(telemetry);
         }
 
         if (now - time_filter_prev >= FILTER_PERIOD_US) {
           time_filter_prev = micros();
+          filter.update(prediction, measurements);
         // filter.predict/update
         }
 
 
-
-        
         break;
       case flightState::UNPOWERED_ASCENT:
         // Implement later
@@ -177,7 +195,6 @@ void loop() {
     prev = now;
   }
 }
-
 
 /*================ EXAMPLE ZONE =======================
 
