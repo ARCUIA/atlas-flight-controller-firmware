@@ -10,6 +10,8 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+#define RAD_TO_DEG 57.29578f
+
 class Filter {
 public:
 
@@ -42,8 +44,16 @@ public:
 
     virtual bool update(Prediction& prediction, const Measurements& measurements) = 0;
 
+    float compute_roll(float ay, float az){
+        return atan2(ay, az) * RAD_TO_DEG;
+    }
+
     protected:
         TeensyTime timer; // I know they say not to use protected in software design but I dont care
+
+
+    
+
 };
 
 #endif

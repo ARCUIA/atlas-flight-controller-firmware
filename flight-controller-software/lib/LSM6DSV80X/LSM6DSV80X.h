@@ -16,7 +16,7 @@ class LSM6DSV80X {
     public:
         struct IMU_Data {
             float ax, ay, az;   // m/s/s
-            float gx, gy, gz;   // dps
+            float gx, gy, gz;  // dps
             float temperature;  // C
             uint32_t time;      // uS
         };

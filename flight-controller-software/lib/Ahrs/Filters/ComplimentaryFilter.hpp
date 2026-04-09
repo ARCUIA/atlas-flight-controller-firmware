@@ -1,7 +1,6 @@
 #ifndef COMPLEMENTARY_HPP
 #define COMPLEMENTARY_HPP
 
-#define RAD_TO_DEG 57.29578f
 
 #include <cmath>
 #include "../Filter.h"
@@ -18,8 +17,10 @@ public:
     }
 
     bool update(Prediction& prediction, const Measurements& measurements) override {
+        
+        float accelerometer_predicted_roll = Filter::compute_roll(measurements.imu.ay, measurements.imu.ax);
+        accelerometer_predicted_roll = std::fmod(accelerometer_predicted_roll, 360.0f);
 
-        float accelerometer_predicted_roll = atan2(measurements.imu.ay, measurements.imu.az) * RAD_TO_DEG;
         uint32_t current_timer_value = timer.now_us();
         uint32_t time_elapsed = current_timer_value - last_timer_value;
         last_timer_value = current_timer_value;

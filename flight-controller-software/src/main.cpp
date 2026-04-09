@@ -37,11 +37,11 @@
 // Pins
 const int ssPin = 10;
 
-const int RADIO_TX_PIN = -1; // TODO: put the actual pin number
-const int RADIO_RX_PIN = -1;
+const int RADIO_TX_PIN = 1; // Serial1 TX
+const int RADIO_RX_PIN = 0; // Serial1 RX
 
-const int GPS_TX_PIN = -1;
-const int GPS_RX_PIN = -1;
+const int GPS_TX_PIN = 8; // Serial2 TX
+const int GPS_RX_PIN = 7; // Serial2 RX
 
 const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 57600;
@@ -75,8 +75,8 @@ float mag_dec = 0.0f;
 
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
-SerialBus radio_bus(RADIO_RX_PIN, RADIO_TX_PIN, RADIO_BAUD_RATE);
-SerialBus gps_bus(GPS_RX_PIN, GPS_TX_PIN, GPS_BAUD_RATE);
+RFD900XUS radio(Serial1);
+SerialBus gps_bus(Serial2, GPS_BAUD_RATE);
 
 TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
@@ -86,16 +86,17 @@ Adafruit_LIS2MDL mag;
 
 LSM6DSV80X::IMU_Data imu_data;
 RFD900XUS::telemetry_packet telemetry;
+Calibration::Offsets offset;
 
 LSM6DSV80X imu(imu_bus, imu_time);
-RFD900XUS radio(radio_bus);
+
+Adafruit_GPS gps(&Serial1);
 
 float g_weight = 0.5f;
 float a_weight = 0.5f;
 ComplementaryFilter filter(g_weight, a_weight);
 Filter::Prediction prediction;
 Filter::Measurements measurements;
-
 
 flightState state;
 controlType controls = controlType::CANARDS;
@@ -109,9 +110,20 @@ void setup()
   
   // Com Busses
   Wire.begin();
-  radio_bus.begin(); // Radio
+  radio.begin(RADIO_BAUD_RATE); // Radio
   gps_bus.begin(); // GPS
   imu.begin(); // IMU
+
+  Calibration calibration(radio, imu);
+  calibration.get_offsets(offset);
+
+  gps.begin(GPS_BAUD_RATE);
+  // 
+  // Enable RMC and GGA
+  gps.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  // Set the default update rate of 1HZ
+  gps.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+  GPS.LOCUS_StartLogger() // Start logging gps data 
 //  magnetometer.begin() // Magnetometer
 //  barometer.begin() // Barometer
 
@@ -126,6 +138,7 @@ void loop() {
 
     // Just here to test, remove later
     imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
+    Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
     telemetry.imu_data = imu_data; // for radio
     measurements.imu = imu_data; // for filter
     
@@ -169,7 +182,7 @@ void loop() {
         // Data Transmission
         if (now - time_radio_prev >= RADIO_PERIOD_US) {
           time_radio_prev = micros();
-          radio.transmit_to_base_station(telemetry);
+          radio.tx_base_station(telemetry);
         }
 
         if (now - time_filter_prev >= FILTER_PERIOD_US) {
