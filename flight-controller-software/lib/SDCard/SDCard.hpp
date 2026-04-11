@@ -21,7 +21,7 @@ class SDCard {
 
 
         bool begin(){
-           if (!SD.begin(_ssPin)) {
+           if (!SD.begin(ss_pin)) {
             return false;
           }
 
@@ -47,7 +47,6 @@ class SDCard {
             SD_card_data data = buffer[i];
             file.print(data.temp);
             file.print(",");
-            file.println(data.temp2);
           }
           
           buffer_count = 0;

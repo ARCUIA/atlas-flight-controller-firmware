@@ -72,6 +72,8 @@ const float FILTER_ACCEL_WEIGHT = 0.5f; // Must add to 1.0
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
+TeensyTime imu_time;
+
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
 RFD900XUS radio(Serial1);
@@ -83,7 +85,6 @@ ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
 Filter::Prediction prediction;
 Filter::Measurements measurements;
 
-TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
 
 //I2CBus magnetometer;
