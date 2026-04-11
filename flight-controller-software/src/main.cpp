@@ -30,18 +30,14 @@
 #include "../lib/RFD900XUS/RFD900XUS.h"
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
 #include "../lib/Platform_Teensy/I2CBus.hpp"
+#include "../lib/Platform_Teensy/SPIBus.hpp"
 #include "../lib/Ahrs/Calibration.h"
 #include "../lib/Ahrs/Filters/ComplimentaryFilter.hpp"
 #include "../lib/Ahrs/Filter.h"
+#include "../lib/SDCard/SDCard.hpp"
 
 // Pins
 const int ssPin = 10;
-
-const int RADIO_TX_PIN = 1; // Serial1 TX
-const int RADIO_RX_PIN = 0; // Serial1 RX
-
-const int GPS_TX_PIN = 8; // Serial2 TX
-const int GPS_RX_PIN = 7; // Serial2 RX
 
 const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 57600;
@@ -70,12 +66,22 @@ uint32_t time_pid_prev = now;
 uint32_t time_radio_prev = now;
 uint32_t time_sd_prev = now;
 
+const float FILTER_GYRO_WEIGHT = 0.5f;
+const float FILTER_ACCEL_WEIGHT = 0.5f; // Must add to 1.0
+
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
 RFD900XUS radio(Serial1);
+LSM6DSV80X imu(imu_bus, imu_time);
+Adafruit_GPS gps(&Serial1);
+SDCard sd_card(ssPin);
+
+ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
+Filter::Prediction prediction;
+Filter::Measurements measurements;
 
 TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
@@ -86,16 +92,6 @@ Adafruit_LIS2MDL mag;
 LSM6DSV80X::IMU_Data imu_data;
 RFD900XUS::telemetry_packet telemetry;
 Calibration::Offsets offset;
-
-LSM6DSV80X imu(imu_bus, imu_time);
-
-Adafruit_GPS gps(&Serial1);
-
-float g_weight = 0.5f;
-float a_weight = 0.5f;
-ComplementaryFilter filter(g_weight, a_weight);
-Filter::Prediction prediction;
-Filter::Measurements measurements;
 
 flightState state;
 controlType controls = controlType::CANARDS;
@@ -112,20 +108,19 @@ void setup()
   radio.begin(RADIO_BAUD_RATE); // Radio
   gps.begin(GPS_BAUD_RATE); // GPS
   imu.begin(); // IMU
+  sd_card.begin();
+
+  //  magnetometer.begin() // Magnetometer
+  //  barometer.begin() // Barometer
 
   Calibration calibration(radio, imu);
-  calibration.get_offsets(offset);
+  calibration.get_offsets(offset); // Runs the calibration routine. We probably want to move this somewhere else
 
-  // 
+  
   // Enable RMC and GGA
   gps.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // Set the default update rate of 1HZ
   gps.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-//  magnetometer.begin() // Magnetometer
-//  barometer.begin() // Barometer
-
-  initSD(ssPin); // Returns Error if Failed.      
-
 }
 
 void loop() {
@@ -138,7 +133,15 @@ void loop() {
     Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
     telemetry.imu_data = imu_data; // for radio
     measurements.imu = imu_data; // for filter
-    
+
+    SDCard::SD_card_data sd_data;
+    sd_data.temp = imu_data.ax; // Just for now will add more stuff to save
+    sd_card.save_to_buffer(sd_data);
+
+    if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
+        sd_card.buffered_write();
+    }
+      
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
         break;
@@ -147,6 +150,8 @@ void loop() {
         // Get I2C Data
         if (now - time_mag_prev >= MAG_PERIOD_US) {
             time_mag_prev = micros();
+
+            // mag.read
         }
 
         if (now - time_baro_prev >= BARO_PERIOD_US) {
