@@ -76,7 +76,6 @@ float mag_dec = 0.0f;
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
 RFD900XUS radio(Serial1);
-SerialBus gps_bus(Serial2, GPS_BAUD_RATE);
 
 TeensyTime imu_time;
 Adafruit_LIS2MDL mag;
@@ -111,19 +110,17 @@ void setup()
   // Com Busses
   Wire.begin();
   radio.begin(RADIO_BAUD_RATE); // Radio
-  gps_bus.begin(); // GPS
+  gps.begin(GPS_BAUD_RATE); // GPS
   imu.begin(); // IMU
 
   Calibration calibration(radio, imu);
   calibration.get_offsets(offset);
 
-  gps.begin(GPS_BAUD_RATE);
   // 
   // Enable RMC and GGA
   gps.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // Set the default update rate of 1HZ
   gps.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
-  GPS.LOCUS_StartLogger() // Start logging gps data 
 //  magnetometer.begin() // Magnetometer
 //  barometer.begin() // Barometer
 
@@ -161,11 +158,21 @@ void loop() {
         // ===============
         //  TODO: Add in Drivers for sensors (LSM6DSV80X, LPS22HH)
         // ===============
+        
+        if (now - time_gps_prev >= GPS_PERIOD_US){
+          time_gps_prev = micros();
 
-
-        if (gps_bus.available()) {
-            // read GPS bytes 
-            // Issue an interrupt ?
+          
+          if (gps.newNMEAreceived()) {
+            if (gps.parse(gps.lastNMEA())) {
+              telemetry.gps_data.latitude = gps.latitude;
+              telemetry.gps_data.latitude_dir = gps.lat;  
+              telemetry.gps_data.longitude = gps.longitude;
+              telemetry.gps_data.longitude_dir = gps.lon; 
+              telemetry.gps_data.altitude = gps.altitude;
+              telemetry.gps_data.fix_quality = (uint8_t)gps.fixquality;
+            }
+          }
         }
 
         // State Estimation

@@ -5,7 +5,6 @@
 #include "../Platform_Teensy/TeensyTime.hpp"
 
 #include "IBus.hpp"
-#include "SerialBus.hpp"
 
 #include <Arduino.h>
 #include <Wire.h>

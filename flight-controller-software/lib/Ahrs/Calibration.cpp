@@ -99,13 +99,13 @@ void Calibration::_align_axis_prompt(char axis) {
             break;
     }
 
-    _radio.send_textln(" axis, then press any key.");
+    _radio.send_text(" axis, then press any key.");
 
     TeensyTime time;
 
     while (!_radio.available()) {
         _imu.read(imu_data);
-        _radio.send_textln("Waiting for key press...");
+        _radio.send_text("Waiting for key press...");
         time.delay_us(CALIBRATION_TIME_DELAY);
     }
 

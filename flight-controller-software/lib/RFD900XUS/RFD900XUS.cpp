@@ -17,14 +17,6 @@ bool RFD900XUS::send_text(const char* text) {
     return true;
 }
 
-bool RFD900XUS::send_textln(const char* text) {
-    _radio.println(text);
-    return true;
-}
-
-bool RFD900XUS::is_base_station_command_available() {
-    return _radio.available() > 0; // Temporary, add more to this later
-}
 
 bool RFD900XUS::available() {
     return _radio.available() > 0;
@@ -34,4 +26,22 @@ int RFD900XUS::read() {
     return _radio.read();
 }
 
-// TODO: Add code here to handle base station commands
+bool RFD900XUS::receive_command(char* buffer, uint16_t buffer_size) {
+
+    uint16_t i = 0;
+
+    while (_radio.available() > 0 && i < buffer_size - 1) {
+        char c = _radio.read();
+
+        if (c == '\n') {
+            buffer[i] = '\0';
+            return true;
+        }
+
+        buffer[i] = c;
+        i ++;
+    }
+
+    buffer[i] = '\0';
+    return false;
+}
