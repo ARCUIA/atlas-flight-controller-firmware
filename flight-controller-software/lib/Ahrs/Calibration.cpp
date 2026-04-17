@@ -1,9 +1,7 @@
 #include "Calibration.h"
 
-Calibration::Calibration(SerialBus& serial, LSM6DSV80X& imu) : _imu(imu), _serial(serial) {
-    _serial.begin();
-};
-
+Calibration::Calibration(RFD900XUS& radio, LSM6DSV80X& imu) : _imu(imu), _radio(radio) {
+}
 
 void Calibration::get_offsets(Offsets& offsets) {
 
@@ -78,42 +76,41 @@ void Calibration::get_offsets(Offsets& offsets) {
     offsets.gz = gyro_z / count_z;
 }
 void Calibration::_align_axis_prompt(char axis) {
-    _serial.send_message((char*)"Align the IMU along its ");
+    _radio.send_text("Align the IMU along its ");
 
     switch (axis) {
         case 'x':
-            _serial.send_message((char*)"+X");
+            _radio.send_text("+X");
             break;
         case 'y':
-            _serial.send_message((char*)"+Y");
+            _radio.send_text("+Y");
             break;
         case 'z':
-            _serial.send_message((char*)"+Z");
+            _radio.send_text("+Z");
             break;
         case 'X':
-            _serial.send_message((char*)"-X");
+            _radio.send_text("-X");
             break;
         case 'Y':
-            _serial.send_message((char*)"-Y");
+            _radio.send_text("-Y");
             break;
         case 'Z':
-            _serial.send_message((char*)"-Z");
+            _radio.send_text("-Z");
             break;
     }
 
-    _serial.send_message((char*)" axis, then press any key.\n");
+    _radio.send_text(" axis, then press any key.");
 
     TeensyTime time;
 
-    while (!_serial.available()) {
-        _serial.send_bytes((uint8_t*)&imu_data, sizeof(imu_data));
+    while (!_radio.available()) {
         _imu.read(imu_data);
+        _radio.send_text("Waiting for key press...");
         time.delay_us(CALIBRATION_TIME_DELAY);
     }
 
-    uint8_t buffer;
-    while (_serial.available()) {
-        _serial.read(0, &buffer, 1);
+    while (_radio.available()) {
+        _radio.read();
     }
 }
 

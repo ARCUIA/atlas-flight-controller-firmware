@@ -5,6 +5,13 @@
  * @version 1.0.0
  */
 
+// TODO: Add driver / bus for SD card and add code to store data in SD card
+// TODO: Kalman filter?
+// TODO: Pitch and Yaw?
+// TODO: Actually test this
+// TODO: Drivers for barometer and magnetometer?
+
+
 // Libraries
 #include <Arduino.h>
 #include <Wire.h>
@@ -17,19 +24,22 @@
 
 // Header Files
 #include "startup.hpp"
-#include "myEnums.hpp"
+#include "myenums.hpp"
 #include "sd_handler.hpp"
 #include "../lib/LSM6DSV80X/LSM6DSV80X.h"
+#include "../lib/RFD900XUS/RFD900XUS.h"
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
 #include "../lib/Platform_Teensy/I2CBus.hpp"
+#include "../lib/Platform_Teensy/SPIBus.hpp"
 #include "../lib/Ahrs/Calibration.h"
+#include "../lib/Ahrs/Filters/ComplimentaryFilter.hpp"
+#include "../lib/Ahrs/Filter.h"
+#include "../lib/SDCard/SDCard.hpp"
 
 // Pins
 const int ssPin = 10;
 
-const int RADIO_TX_PIN = -1; // TODO: put the actual pin number
-const int RADIO_RX_PIN = -1;
-
+const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 57600;
 
 // Declaring Constants Here
@@ -37,35 +47,81 @@ const uint32_t DELAY = 10000UL; // uS
 
 // Declaring Variables Here
 uint32_t now = micros();
+
+// Periods of when to do each action
+const uint32_t FILTER_PERIOD_US = -1;
+const uint32_t GPS_PERIOD_US = -1;
+const uint32_t MAG_PERIOD_US = -1; // TODO: Put the actual periods
+const uint32_t BARO_PERIOD_US = -1;
+const uint32_t PID_PERIOD_US = -1;
+const uint32_t RADIO_PERIOD_US = -1;
+const uint32_t SD_CARD_PERIOD_US = -1;
+
+// Starting times to decide when to do actions
+uint32_t time_filter_prev = now;
+uint32_t time_gps_prev = now;
+uint32_t time_mag_prev = now;
+uint32_t time_baro_prev = now;
+uint32_t time_pid_prev = now;
+uint32_t time_radio_prev = now;
+uint32_t time_sd_prev = now;
+
+const float FILTER_GYRO_WEIGHT = 0.5f;
+const float FILTER_ACCEL_WEIGHT = 0.5f; // Must add to 1.0
+
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
-LSM6DSV80X::IMU_Data imu_data;
+TeensyTime imu_time;
 
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
-SerialBus radio_bus(RADIO_RX_PIN, RADIO_TX_PIN, RADIO_BAUD_RATE);
-
-TeensyTime imu_time;
-Adafruit_LIS2MDL mag;
+RFD900XUS radio(Serial1);
 LSM6DSV80X imu(imu_bus, imu_time);
+Adafruit_GPS gps(&Serial1);
+SDCard sd_card(ssPin);
+
+ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
+Filter::Prediction prediction;
+Filter::Measurements measurements;
+
+Adafruit_LIS2MDL mag;
+
+//I2CBus magnetometer;
+//I2CBus barometer;
+
+LSM6DSV80X::IMU_Data imu_data;
+RFD900XUS::telemetry_packet telemetry;
+Calibration::Offsets offset;
+
 flightState state;
 controlType controls = controlType::CANARDS;
 
 void setup()
 {
   // Keep Tests out of setup() in case of temp black/brownout.
+  prediction.roll = 0.0f; // Just so we dont grab a garbage value. There is code to ignore the first value of prediction.roll so this should be overwritten after we call filter.update
 
   mag_dec = get_mag_dec(launchSite::IOWA_CITY);
   
   // Com Busses
   Wire.begin();
-  radio_bus.begin();
-  
-  Serial1.begin(RADIO_BAUD_RATE); // GPS
-  initSD(ssPin); // Returns Error if Failed.      
+  radio.begin(RADIO_BAUD_RATE); // Radio
+  gps.begin(GPS_BAUD_RATE); // GPS
+  imu.begin(); // IMU
+  sd_card.begin();
 
-  imu.begin();
+  //  magnetometer.begin() // Magnetometer
+  //  barometer.begin() // Barometer
+
+  Calibration calibration(radio, imu);
+  calibration.get_offsets(offset); // Runs the calibration routine. We probably want to move this somewhere else
+
+  
+  // Enable RMC and GGA
+  gps.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  // Set the default update rate of 1HZ
+  gps.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
 }
 
 void loop() {
@@ -74,38 +130,81 @@ void loop() {
   if (now - prev >= DELAY) {
 
     // Just here to test, remove later
-    imu.read(imu_data);
+    imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
+    Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
+    telemetry.imu_data = imu_data; // for radio
+    measurements.imu = imu_data; // for filter
 
-    
+    SDCard::SD_card_data sd_data;
+    sd_data.temp = imu_data.ax; // Just for now will add more stuff to save
+    sd_card.save_to_buffer(sd_data);
+
+    if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
+        sd_card.buffered_write();
+    }
+      
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
         break;
       
       case flightState::POWERED_ASCENT:
         // Get I2C Data
+        if (now - time_mag_prev >= MAG_PERIOD_US) {
+            time_mag_prev = micros();
+
+            // mag.read
+        }
+
+        if (now - time_baro_prev >= BARO_PERIOD_US) {
+            time_baro_prev = micros();
+            
+            // baro.read()
+        }
 
         // ===============
         //  TODO: Add in Drivers for sensors (LSM6DSV80X, LPS22HH)
         // ===============
+        
+        if (now - time_gps_prev >= GPS_PERIOD_US){
+          time_gps_prev = micros();
 
-        // Check if GPS ready, skip otherwise
-        // if (GPS.available()){
-        //   // Read GPS
-        // }
+          
+          if (gps.newNMEAreceived()) {
+            if (gps.parse(gps.lastNMEA())) {
+              telemetry.gps_data.latitude = gps.latitude;
+              telemetry.gps_data.latitude_dir = gps.lat;  
+              telemetry.gps_data.longitude = gps.longitude;
+              telemetry.gps_data.longitude_dir = gps.lon; 
+              telemetry.gps_data.altitude = gps.altitude;
+              telemetry.gps_data.fix_quality = (uint8_t)gps.fixquality;
+            }
+          }
+        }
 
         // State Estimation
 
 
         // Control Systems
 
+        if (now - time_pid_prev >= PID_PERIOD_US) {
+          time_pid_prev = micros();
+          // PID.control(prediction.roll) <- maybe like this in the future?
+        }
+
 
         // Data Transmission
+        if (now - time_radio_prev >= RADIO_PERIOD_US) {
+          time_radio_prev = micros();
+          radio.tx_base_station(telemetry);
+        }
+
+        if (now - time_filter_prev >= FILTER_PERIOD_US) {
+          time_filter_prev = micros();
+          filter.update(prediction, measurements);
+        // filter.predict/update
+        }
 
 
-        // Data Logging
-
-
-        
         break;
       case flightState::UNPOWERED_ASCENT:
         // Implement later
@@ -122,7 +221,6 @@ void loop() {
     prev = now;
   }
 }
-
 
 /*================ EXAMPLE ZONE =======================
 

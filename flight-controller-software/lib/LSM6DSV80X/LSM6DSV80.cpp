@@ -220,6 +220,8 @@ bool LSM6DSV80X::read(IMU_Data& data) {
     data.ay          = (buf[11] << 8) | buf[10];
     data.az          = (buf[13] << 8) | buf[12];
     data.time        = time;
+    
+    return true;
 }
 
 void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){

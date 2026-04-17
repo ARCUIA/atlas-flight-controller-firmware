@@ -3,14 +3,13 @@
 
 #include "../LSM6DSV80X/LSM6DSV80X.h"
 #include "../Platform_Teensy/TeensyTime.hpp"
+#include "../RFD900XUS/RFD900XUS.h"
 
 #include "IBus.hpp"
-#include "SerialBus.hpp"
 
 #include <Arduino.h>
 #include <Wire.h>
 
-#define SERIAL_TERMINAL_BAUD_RATE 115200
 #define CALIBRATION_TIME_DELAY 100000
 #define ACCEL_STATIONARY_EXPECTED_VALUE 1.0f
 #define NUM_MEASUREMENTS 50
@@ -29,7 +28,7 @@ public:
     };
 
     
-    Calibration(SerialBus& serial, LSM6DSV80X& imu);
+    Calibration(RFD900XUS& radio, LSM6DSV80X& imu);
     void get_offsets(Offsets& offsets);
     static void apply_offsets(const Offsets& offsets, LSM6DSV80X::IMU_Data& imu_data);
 
@@ -37,7 +36,7 @@ private:
     char axis_to_align[AXIS_NUM] = {'x', 'y', 'z', 'X', 'Y', 'Z'};
 
     LSM6DSV80X& _imu;
-    SerialBus& _serial;
+    RFD900XUS& _radio;
     LSM6DSV80X::IMU_Data imu_data;
     TeensyTime timer;
 
