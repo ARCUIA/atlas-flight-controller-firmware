@@ -4,78 +4,92 @@
 #include <Arduino.h>
 #include <SD.h>
 
-
-#define PATH_TO_SD_DATA "/rocket" 
+#define PATH_TO_SD_DATA "/rocket"
 #define SD_DATA_FILENAME "/rocket/data.txt"
-
 #define BUFFER_SIZE 20
 
 class SDCard {
-    public:
+public:
+    struct SD_card_data {
+        float accel_x = 0.0f;
+        float accel_y = 0.0f;
+        float accel_z = 0.0f;
 
-        struct SD_card_data {
-          float temp = 0.0f;
-        };
+        float gyro_x = 0.0f;
+        float gyro_y = 0.0f;
+        float gyro_z = 0.0f;
 
-        SDCard(int ss_pin) : ss_pin(ss_pin) {}
+        float gps_latitude = 0.0f;
+        float gps_longitude = 0.0f;
+        float gps_altitude = 0.0f;
 
+        float mag_x = 0.0f;
+        float mag_y = 0.0f;
+        float mag_z = 0.0f;
 
-        bool begin(){
-           if (!SD.begin(ss_pin)) {
+        uint32_t timestamp_us = 0;
+    };
+
+    SDCard(int ss_pin) : ss_pin(ss_pin) {}
+
+    bool begin() {
+        if (!SD.begin(ss_pin)) {
             return false;
-          }
+        }
 
-          if (!SD.exists(PATH_TO_SD_DATA)) {
+        if (!SD.exists(PATH_TO_SD_DATA)) {
             SD.mkdir(PATH_TO_SD_DATA);
-          }
         }
 
+        Serial.println("Initialized sd card");
+        return true;
+    }
 
-        bool buffered_write(){
-
-          if (buffer_count <= 0){
+    bool buffered_write() {
+        if (buffer_count <= 0) {
             return false;
-          }
+        }
 
-          File file = SD.open(SD_DATA_FILENAME, FILE_WRITE);
-
-          if (!file){
+        File file = SD.open(SD_DATA_FILENAME, FILE_WRITE);
+        if (!file) {
             return false;
-          }
-        
-          for (int i = 0; i < buffer_count; i++){
+        }
+
+        for (int i = 0; i < buffer_count; i++) {
             SD_card_data data = buffer[i];
-            file.print(data.temp);
+
+            file.print(data.timestamp_us);
             file.print(",");
-          }
-          
-          buffer_count = 0;
-          file.close();
-          return true;
         }
 
+        Serial.println("wrote data in buffer to sd card");
 
-        bool save_to_buffer(const SD_card_data& data) {
+        buffer_count = 0;
+        file.close();
+        return true;
+    }
 
-          if (buffer_count >= buffer_size){
+    bool save_to_buffer(const SD_card_data& data) {
+        if (buffer_count >= buffer_size) {
             return false;
-          }
-
-          buffer[buffer_count] = data;
-          buffer_count++;
-          return true;
-      }
-
-        int get_buffer_count(){
-          return buffer_count;
         }
 
+        buffer[buffer_count] = data;
+        buffer_count++;
 
-    private:
-        int ss_pin;
-        int buffer_count = 0;
-        int buffer_size = BUFFER_SIZE;
-        SD_card_data buffer[BUFFER_SIZE];
+        Serial.println("wrote data to sd card buffer");
+        return true;
+    }
+
+    int get_buffer_count() {
+        return buffer_count;
+    }
+
+private:
+    int ss_pin;
+    int buffer_count = 0;
+    int buffer_size = BUFFER_SIZE;
+    SD_card_data buffer[BUFFER_SIZE];
 };
 
 #endif

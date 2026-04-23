@@ -18,13 +18,21 @@ bool RFD900XUS::send_text(const char* text) {
 }
 
 
-bool RFD900XUS::available() {
+bool RFD900XUS::is_command_available() {
     return _radio.available() > 0;
 }
 
 int RFD900XUS::read() {
     return _radio.read();
 }
+
+// BS: “PING” <-> Rocket: “PONG” (edited)
+// BS: “ARM” <-> Rocket: “ARMED” (edited)
+// BS: “RESET” <-> Rocket: “RESET_OK”
+
+//Packet,time,yaw,pitch,roll,altitude, accel x, accel y, accel z, latitude, longitude
+
+
 
 bool RFD900XUS::receive_command(char* buffer, uint16_t buffer_size) {
 
