@@ -137,46 +137,74 @@ void loop() {
 
   Serial.println("Here-1");
 
+
   if (now - prev >= DELAY) {
 
-    // Just here to test, remove later
-    imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
-    Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
-    
-    telemetry.imu_data = imu_data; // for radio
-    measurements.imu = imu_data; // for filter
+   if (radio.is_command_available()) {
+              if (radio.receive_command(command_buffer)) {
 
-    Serial.print("IMU accel: ");
-    Serial.print(imu_data.ax);
-    Serial.print(", ");
-    Serial.print(imu_data.ay);
-    Serial.print(", ");
-    Serial.print(imu_data.az);
+                  if (command_buffer == "ARM") {
+                      state = flightState::POWERED_ASCENT;
+                      radio.send_message("ARMED");
+                  }
+                  else if (command_buffer == "PING") {
+                      radio.send_message("PONG");
+                  }
+                  else if (command_buffer == "RESET") {
+                      radio.send_message("RESET_OK");
+                  }
 
-    Serial.print(" | gyro: ");
-    Serial.print(imu_data.gx);
-    Serial.print(", ");
-    Serial.print(imu_data.gy);
-    Serial.print(", ");
-    Serial.print(imu_data.gz);
-
-    SDCard::SD_card_data sd_data;
-    sd_data.timestamp_us = now;
-    sd_data.imu_data = imu_data;
-    sd_data.gps_latitude = telemetry.latitude;
-    sd_data.gps_longitude = telemetry.longitude;
-    sd_data.gps_altitude = telemetry.altitude_m;
-    sd_card.save_to_buffer(sd_data);
-
-    if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
-        sd_card.buffered_write();
-    }
+                  command_buffer.clear();
+              }
+          }
       
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
         break;
       
       case flightState::POWERED_ASCENT:
+
+  static std::string command_buffer;
+
+         
+
+        // Feel free to move wherever if you dont want to do this every loop
+
+
+        // Just here to test, remove later
+        imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
+        Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
+        
+        telemetry.imu_data = imu_data; // for radio
+        measurements.imu = imu_data; // for filter
+
+        Serial.print("IMU accel: ");
+        Serial.print(imu_data.ax);
+        Serial.print(", ");
+        Serial.print(imu_data.ay);
+        Serial.print(", ");
+        Serial.print(imu_data.az);
+
+        Serial.print(" | gyro: ");
+        Serial.print(imu_data.gx);
+        Serial.print(", ");
+        Serial.print(imu_data.gy);
+        Serial.print(", ");
+        Serial.print(imu_data.gz);
+
+        SDCard::SD_card_data sd_data;
+        sd_data.timestamp_us = now;
+        sd_data.imu_data = imu_data;
+        sd_data.gps_latitude = telemetry.latitude;
+        sd_data.gps_longitude = telemetry.longitude;
+        sd_data.gps_altitude = telemetry.altitude_m;
+        sd_card.save_to_buffer(sd_data);
+
+        if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
+            sd_card.buffered_write();
+        }
+
+
         // Get I2C Data
         if (now - time_mag_prev >= MAG_PERIOD_US) {
             time_mag_prev = micros();
@@ -218,10 +246,10 @@ void loop() {
         }
 
 
-        // Data Transmission
+          // Data Transmission
         if (now - time_radio_prev >= RADIO_PERIOD_US) {
-          time_radio_prev = micros();
-          radio.tx_base_station(telemetry);
+            time_radio_prev = micros();
+            radio.tx_base_station(telemetry);
         }
 
         if (now - time_filter_prev >= FILTER_PERIOD_US) {
@@ -231,7 +259,7 @@ void loop() {
         }
 
 
-        break;
+          break;
       case flightState::UNPOWERED_ASCENT:
         // Implement later
         break;
