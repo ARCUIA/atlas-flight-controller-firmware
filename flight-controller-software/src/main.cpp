@@ -35,26 +35,29 @@
 #include "../lib/Ahrs/Filter.h"
 #include "../lib/SDCard/SDCard.hpp"
 
+const int DEBUG_MODE = true; // Enable serial connection to computer for debugging
+const int DEBUG_SERIAL_BAUD_RATE = 9600; // Baud rate for debugging
+
 // Pins
-const int ssPin = 10;
+const int ssPin = 38;
 
 const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 57600;
 
 // Declaring Constants Here
-const uint32_t DELAY = 10000UL; // uS
+const uint32_t DELAY = 100000UL; // uS
 
 // Declaring Variables Here
 uint32_t now = micros();
 
 // Periods of when to do each action
-const uint32_t FILTER_PERIOD_US = -1;
-const uint32_t GPS_PERIOD_US = -1;
-const uint32_t MAG_PERIOD_US = -1; // TODO: Put the actual periods
-const uint32_t BARO_PERIOD_US = -1;
-const uint32_t PID_PERIOD_US = -1;
-const uint32_t RADIO_PERIOD_US = -1;
-const uint32_t SD_CARD_PERIOD_US = -1;
+const uint32_t FILTER_PERIOD_US  = DELAY; // Do it every loop
+const uint32_t GPS_PERIOD_US     = 1000000UL; // Placeholders
+const uint32_t MAG_PERIOD_US     = 50000UL;
+const uint32_t BARO_PERIOD_US    = 50000UL;
+const uint32_t PID_PERIOD_US     = DELAY;
+const uint32_t RADIO_PERIOD_US   = 100000UL;
+const uint32_t SD_CARD_PERIOD_US = 100000UL;
 
 // Starting times to decide when to do actions
 uint32_t time_filter_prev = now;
@@ -75,7 +78,7 @@ TeensyTime imu_time;
 
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
-RFD900XUS radio(Serial1);
+RFD900XUS radio(Serial5);
 LSM6DSV80X imu(imu_bus, imu_time);
 Adafruit_GPS gps(&Serial1);
 SDCard sd_card(ssPin);
@@ -98,6 +101,12 @@ controlType controls = controlType::CANARDS;
 
 void setup()
 {
+
+  if (DEBUG_MODE == true){
+    Serial.begin(DEBUG_SERIAL_BAUD_RATE);
+    delay(1000);
+  }
+
   // Keep Tests out of setup() in case of temp black/brownout.
   prediction.roll = 0.0f; // Just so we dont grab a garbage value. There is code to ignore the first value of prediction.roll so this should be overwritten after we call filter.update
 
@@ -126,6 +135,8 @@ void setup()
 void loop() {
   now = micros();
 
+  Serial.println("Here-1");
+
   if (now - prev >= DELAY) {
 
     // Just here to test, remove later
@@ -135,8 +146,22 @@ void loop() {
     telemetry.imu_data = imu_data; // for radio
     measurements.imu = imu_data; // for filter
 
+    Serial.print("IMU accel: ");
+    Serial.print(imu_data.ax);
+    Serial.print(", ");
+    Serial.print(imu_data.ay);
+    Serial.print(", ");
+    Serial.print(imu_data.az);
+
+    Serial.print(" | gyro: ");
+    Serial.print(imu_data.gx);
+    Serial.print(", ");
+    Serial.print(imu_data.gy);
+    Serial.print(", ");
+    Serial.print(imu_data.gz);
+
     SDCard::SD_card_data sd_data;
-    sd_data.temp = imu_data.ax; // Just for now will add more stuff to save
+    sd_data.accel_x = imu_data.ax; // Just for now will add more stuff to save
     sd_card.save_to_buffer(sd_data);
 
     if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
@@ -167,6 +192,7 @@ void loop() {
         
         if (now - time_gps_prev >= GPS_PERIOD_US){
           time_gps_prev = micros();
+
 
           if (gps.newNMEAreceived()) {
             if (gps.parse(gps.lastNMEA())) {
