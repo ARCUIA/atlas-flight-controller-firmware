@@ -162,9 +162,10 @@ void loop() {
       case flightState::PREFLIGHT_IDLE:
         break;
       
-      case flightState::POWERED_ASCENT:
+      case flightState::POWERED_ASCENT: {
 
-  static 
+      
+
 
          
 
@@ -259,6 +260,7 @@ void loop() {
           filter.update(prediction, measurements);
         // filter.predict/update
         }
+      }
 
 
           break;
