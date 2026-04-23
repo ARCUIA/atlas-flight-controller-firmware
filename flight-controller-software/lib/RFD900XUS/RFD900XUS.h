@@ -2,37 +2,46 @@
 #define RFD900XUS_H
 
 #include <stdint.h>
+#include <string>
 #include <Arduino.h>
 #include "../LSM6DSV80X/LSM6DSV80X.h"
 
 class RFD900XUS {
 public:
-    struct GPS_Data {
-        float latitude;
-        char latitude_dir;    // 'N' or 'S'
-        float longitude;
-        char longitude_dir;   // 'E' or 'W'
-        float altitude;
-        uint8_t fix_quality;  // 0=invalid, 1=GPS fix, 2=DGPS fix
-    };
+    static constexpr uint8_t RADIO_RECEIVE_LIMIT = 5;
 
     struct telemetry_packet {
+        uint32_t packet; // What is packet?
+        uint32_t time_ms;
+
+        float yaw;
+        float pitch; // We only getting roll info for now
+        float roll;
+
+        float altitude_m; // Are we actually using barometer?
+
         LSM6DSV80X::IMU_Data imu_data;
-        GPS_Data gps_data;
+
+        float latitude;
+        float longitude;
     };
 
-    RFD900XUS(HardwareSerial& radio);
+    explicit RFD900XUS(HardwareSerial& radio);
+
     void begin(uint32_t baud);
 
     bool tx_base_station(const telemetry_packet& data);
-    bool send_text(const char* text);
-    bool is_base_station_command_available();
-    bool available();
+    bool send_message(const char* text);
+
+    int available();
+
+    bool is_command_available();
     int read();
-    bool receive_command(char* buffer, uint16_t buffer_size);
+
+    bool receive_command(std::string& buffer);
 
 private:
     HardwareSerial& _radio;
 };
 
-#endif 
+#endif

@@ -5,11 +5,10 @@
  * @version 1.0.0
  */
 
-// TODO: Add driver / bus for SD card and add code to store data in SD card
 // TODO: Kalman filter?
 // TODO: Pitch and Yaw?
 // TODO: Actually test this
-// TODO: Drivers for barometer and magnetometer?
+
 
 
 // Libraries
@@ -132,6 +131,7 @@ void loop() {
     // Just here to test, remove later
     imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
     Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
+    
     telemetry.imu_data = imu_data; // for radio
     measurements.imu = imu_data; // for filter
 
@@ -168,15 +168,11 @@ void loop() {
         if (now - time_gps_prev >= GPS_PERIOD_US){
           time_gps_prev = micros();
 
-          
           if (gps.newNMEAreceived()) {
             if (gps.parse(gps.lastNMEA())) {
-              telemetry.gps_data.latitude = gps.latitude;
-              telemetry.gps_data.latitude_dir = gps.lat;  
-              telemetry.gps_data.longitude = gps.longitude;
-              telemetry.gps_data.longitude_dir = gps.lon; 
-              telemetry.gps_data.altitude = gps.altitude;
-              telemetry.gps_data.fix_quality = (uint8_t)gps.fixquality;
+              telemetry.latitude = gps.latitude;
+              telemetry.longitude = gps.longitude;
+              telemetry.altitude_m = gps.altitude; // Unsure if gps is giving in meters. Should check
             }
           }
         }

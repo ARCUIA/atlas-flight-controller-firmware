@@ -21,6 +21,13 @@ void Calibration::get_offsets(Offsets& offsets) {
     for (int i = 0; i < AXIS_NUM; i++) {
         char current_axis = axis_to_align[i];
         _align_axis_prompt(current_axis);
+        _radio.send_message("Press any key when ready");
+
+        while (_radio.available() <= 0) {
+            timer.delay_us(10000); 
+        }
+
+        _radio.read();
 
         for (int j = 0; j < NUM_MEASUREMENTS; j++) {
             _imu.read(imu_data);
@@ -76,36 +83,36 @@ void Calibration::get_offsets(Offsets& offsets) {
     offsets.gz = gyro_z / count_z;
 }
 void Calibration::_align_axis_prompt(char axis) {
-    _radio.send_text("Align the IMU along its ");
+    _radio.send_message("Align the IMU along its ");
 
     switch (axis) {
         case 'x':
-            _radio.send_text("+X");
+            _radio.send_message("+X");
             break;
         case 'y':
-            _radio.send_text("+Y");
+            _radio.send_message("+Y");
             break;
         case 'z':
-            _radio.send_text("+Z");
+            _radio.send_message("+Z");
             break;
         case 'X':
-            _radio.send_text("-X");
+            _radio.send_message("-X");
             break;
         case 'Y':
-            _radio.send_text("-Y");
+            _radio.send_message("-Y");
             break;
         case 'Z':
-            _radio.send_text("-Z");
+            _radio.send_message("-Z");
             break;
     }
 
-    _radio.send_text(" axis, then press any key.");
+    _radio.send_message(" axis, then press any key.");
 
     TeensyTime time;
 
     while (!_radio.available()) {
         _imu.read(imu_data);
-        _radio.send_text("Waiting for key press...");
+        _radio.send_message("Waiting for key press...");
         time.delay_us(CALIBRATION_TIME_DELAY);
     }
 
