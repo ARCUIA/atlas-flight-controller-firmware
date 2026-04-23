@@ -134,29 +134,29 @@ void setup()
 
 void loop() {
   now = micros();
-
+  std::string command_buffer;
   Serial.println("Here-1");
 
 
   if (now - prev >= DELAY) {
-
+    
    if (radio.is_command_available()) {
-              if (radio.receive_command(command_buffer)) {
+      if (radio.receive_command(command_buffer)) {
 
-                  if (command_buffer == "ARM") {
-                      state = flightState::POWERED_ASCENT;
-                      radio.send_message("ARMED");
-                  }
-                  else if (command_buffer == "PING") {
-                      radio.send_message("PONG");
-                  }
-                  else if (command_buffer == "RESET") {
-                      radio.send_message("RESET_OK");
-                  }
+        if (command_buffer == "ARM") {
+            state = flightState::POWERED_ASCENT;
+            radio.send_message("ARMED");
+        }
+        else if (command_buffer == "PING") {
+            radio.send_message("PONG");
+        }
+        else if (command_buffer == "RESET") {
+            radio.send_message("RESET_OK");
+        }
 
-                  command_buffer.clear();
-              }
-          }
+        command_buffer.clear();
+      }
+    } 
       
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
@@ -164,7 +164,7 @@ void loop() {
       
       case flightState::POWERED_ASCENT:
 
-  static std::string command_buffer;
+  static 
 
          
 
@@ -178,20 +178,22 @@ void loop() {
         telemetry.imu_data = imu_data; // for radio
         measurements.imu = imu_data; // for filter
 
-        Serial.print("IMU accel: ");
-        Serial.print(imu_data.ax);
-        Serial.print(", ");
-        Serial.print(imu_data.ay);
-        Serial.print(", ");
-        Serial.print(imu_data.az);
+        if (DEBUG_MODE == true){
+          Serial.print("IMU accel: ");
+          Serial.print(imu_data.ax);
+          Serial.print(", ");
+          Serial.print(imu_data.ay);
+          Serial.print(", ");
+          Serial.print(imu_data.az);
 
-        Serial.print(" | gyro: ");
-        Serial.print(imu_data.gx);
-        Serial.print(", ");
-        Serial.print(imu_data.gy);
-        Serial.print(", ");
-        Serial.print(imu_data.gz);
-
+          Serial.print(" | gyro: ");
+          Serial.print(imu_data.gx);
+          Serial.print(", ");
+          Serial.print(imu_data.gy);
+          Serial.print(", ");
+          Serial.print(imu_data.gz);
+        }
+     
         SDCard::SD_card_data sd_data;
         sd_data.timestamp_us = now;
         sd_data.imu_data = imu_data;

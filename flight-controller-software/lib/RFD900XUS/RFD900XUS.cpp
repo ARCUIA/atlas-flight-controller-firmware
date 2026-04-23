@@ -107,6 +107,7 @@ bool RFD900XUS::receive_command(std::string& buffer) { // use std::string becaus
         }
 
         if (buffer.size() >= RADIO_RECEIVE_LIMIT) {
+            // Clear everything in the radio. 
             while (this->is_command_available()) {
                 _radio.read();
             }
