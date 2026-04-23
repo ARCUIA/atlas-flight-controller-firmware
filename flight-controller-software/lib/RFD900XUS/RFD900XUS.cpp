@@ -60,7 +60,6 @@ bool RFD900XUS::tx_base_station(const telemetry_packet& data) {
 }
 
 
-<<<<<<< HEAD
 bool RFD900XUS::send_message(const char* text) {
     _radio.println(text);
     return true;
@@ -68,28 +67,13 @@ bool RFD900XUS::send_message(const char* text) {
 
 int RFD900XUS::available() {
     return _radio.available();
-=======
-bool RFD900XUS::is_command_available() {
-    return _radio.available() > 0;
->>>>>>> origin/firmware-test
 }
 
 int RFD900XUS::read() {
     return _radio.read();
 }
 
-<<<<<<< HEAD
-=======
-// BS: “PING” <-> Rocket: “PONG” (edited)
-// BS: “ARM” <-> Rocket: “ARMED” (edited)
-// BS: “RESET” <-> Rocket: “RESET_OK”
 
-//Packet,time,yaw,pitch,roll,altitude, accel x, accel y, accel z, latitude, longitude
-
-
-
-bool RFD900XUS::receive_command(char* buffer, uint16_t buffer_size) {
->>>>>>> origin/firmware-test
 
 /*
 

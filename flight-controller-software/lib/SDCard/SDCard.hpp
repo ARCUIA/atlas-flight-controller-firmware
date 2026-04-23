@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <SD.h>
+#include "../LSM6DSV80X/LSM6DSV80X.h"
 
 #define PATH_TO_SD_DATA "/rocket"
 #define SD_DATA_FILENAME "/rocket/data.txt"
@@ -11,13 +12,7 @@
 class SDCard {
 public:
     struct SD_card_data {
-        float accel_x = 0.0f;
-        float accel_y = 0.0f;
-        float accel_z = 0.0f;
-
-        float gyro_x = 0.0f;
-        float gyro_y = 0.0f;
-        float gyro_z = 0.0f;
+        LSM6DSV80X::IMU_Data imu_data;
 
         float gps_latitude = 0.0f;
         float gps_longitude = 0.0f;
@@ -60,6 +55,30 @@ public:
 
             file.print(data.timestamp_us);
             file.print(",");
+            file.print(data.imu_data.ax);
+            file.print(",");
+            file.print(data.imu_data.ay);
+            file.print(",");
+            file.print(data.imu_data.az);
+            file.print(",");
+            file.print(data.imu_data.gx);
+            file.print(",");
+            file.print(data.imu_data.gy);
+            file.print(",");
+            file.print(data.imu_data.gz);
+            file.print(",");
+            file.print(data.gps_latitude);
+            file.print(",");
+            file.print(data.gps_longitude);
+            file.print(",");
+            file.print(data.gps_altitude);
+            file.print(",");
+            file.print(data.mag_x);
+            file.print(",");
+            file.print(data.mag_y);
+            file.print(",");
+            file.print(data.mag_z);
+            file.println();
         }
 
         Serial.println("wrote data in buffer to sd card");

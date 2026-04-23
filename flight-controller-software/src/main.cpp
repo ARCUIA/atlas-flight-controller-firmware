@@ -161,7 +161,11 @@ void loop() {
     Serial.print(imu_data.gz);
 
     SDCard::SD_card_data sd_data;
-    sd_data.accel_x = imu_data.ax; // Just for now will add more stuff to save
+    sd_data.timestamp_us = now;
+    sd_data.imu_data = imu_data;
+    sd_data.gps_latitude = telemetry.latitude;
+    sd_data.gps_longitude = telemetry.longitude;
+    sd_data.gps_altitude = telemetry.altitude_m;
     sd_card.save_to_buffer(sd_data);
 
     if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
