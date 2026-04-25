@@ -9,6 +9,8 @@
 class RFD900XUS {
 public:
     static constexpr uint8_t RADIO_RECEIVE_LIMIT = 5;
+    static constexpr int NUM_COMMANDS = 3;
+    static constexpr char* POSSIBLE_COMMANDS[NUM_COMMANDS]  = {"PING", "ARM", "RESET"};
 
     struct telemetry_packet {
         uint32_t packet; // What is packet?
@@ -38,10 +40,11 @@ public:
     bool is_command_available();
     int read();
 
-    bool receive_command(std::string& buffer);
+    bool receive_command(char* buffer);
 
 private:
     HardwareSerial& _radio;
+    bool does_received_command_exist(const char* command);
 };
 
 #endif

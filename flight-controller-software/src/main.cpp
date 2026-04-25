@@ -24,6 +24,7 @@
 // Header Files
 #include "startup.hpp"
 #include "myenums.hpp"
+#include <string.h>
 #include "sd_handler.hpp"
 #include "../lib/LSM6DSV80X/LSM6DSV80X.h"
 #include "../lib/RFD900XUS/RFD900XUS.h"
@@ -47,14 +48,16 @@ const int RADIO_BAUD_RATE = 57600;
 // Declaring Constants Here
 const uint32_t DELAY = 100000UL; // uS
 
+TeensyTime time_source; 
 // Declaring Variables Here
-uint32_t now = micros();
+uint32_t now = time_source.now_us();
 
 // Periods of when to do each action
 const uint32_t FILTER_PERIOD_US  = DELAY; // Do it every loop
 const uint32_t GPS_PERIOD_US     = 1000000UL; // Placeholders
 const uint32_t MAG_PERIOD_US     = 50000UL;
 const uint32_t BARO_PERIOD_US    = 50000UL;
+const uint32_t IMU_PERIOD_US     = DELAY;
 const uint32_t PID_PERIOD_US     = DELAY;
 const uint32_t RADIO_PERIOD_US   = 100000UL;
 const uint32_t SD_CARD_PERIOD_US = 100000UL;
@@ -67,6 +70,7 @@ uint32_t time_baro_prev = now;
 uint32_t time_pid_prev = now;
 uint32_t time_radio_prev = now;
 uint32_t time_sd_prev = now;
+uint32_t time_imu_prev = now;
 
 const float FILTER_GYRO_WEIGHT = 0.5f;
 const float FILTER_ACCEL_WEIGHT = 0.5f; // Must add to 1.0
@@ -74,12 +78,10 @@ const float FILTER_ACCEL_WEIGHT = 0.5f; // Must add to 1.0
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
-TeensyTime imu_time;
-
 // Create Objects Here
 I2CBus imu_bus(Wire,0x6A);
 RFD900XUS radio(Serial5);
-LSM6DSV80X imu(imu_bus, imu_time);
+LSM6DSV80X imu(imu_bus, time_source);
 Adafruit_GPS gps(&Serial1);
 SDCard sd_card(ssPin);
 
@@ -96,8 +98,8 @@ LSM6DSV80X::IMU_Data imu_data;
 RFD900XUS::telemetry_packet telemetry;
 Calibration::Offsets offset;
 
-flightState state;
 controlType controls = controlType::CANARDS;
+flightState state = flightState::PREFLIGHT_IDLE;
 
 void setup()
 {
@@ -133,30 +135,29 @@ void setup()
 }
 
 void loop() {
-  now = micros();
-  std::string command_buffer;
+  now = time_source.now_us();
   Serial.println("Here-1");
 
 
-  if (now - prev >= DELAY) {
-    
-   if (radio.is_command_available()) {
+  char command_buffer[RFD900XUS::RADIO_RECEIVE_LIMIT + 1] = {0};
+
+  if (radio.is_command_available()) {
       if (radio.receive_command(command_buffer)) {
 
-        if (command_buffer == "ARM") {
-            state = flightState::POWERED_ASCENT;
-            radio.send_message("ARMED");
-        }
-        else if (command_buffer == "PING") {
-            radio.send_message("PONG");
-        }
-        else if (command_buffer == "RESET") {
-            radio.send_message("RESET_OK");
-        }
+          if (strcmp(command_buffer, "ARM") == 0) {
+              state = flightState::POWERED_ASCENT;
+              radio.send_message("ARMED");
+          }
+          else if (strcmp(command_buffer, "PING") == 0) {
+              radio.send_message("PONG");
+          }
+          else if (strcmp(command_buffer, "RESET") == 0) {
+              radio.send_message("RESET_OK");
+          }
 
-        command_buffer.clear();
+          command_buffer[0] = '\0';
       }
-    } 
+  }
       
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
@@ -164,44 +165,42 @@ void loop() {
       
       case flightState::POWERED_ASCENT: {
 
-      
-
-
-         
-
-        // Feel free to move wherever if you dont want to do this every loop
-
-
+  
         // Just here to test, remove later
-        imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
-        Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
-        
-        telemetry.imu_data = imu_data; // for radio
-        measurements.imu = imu_data; // for filter
+        if (now - time_imu_prev >= IMU_PERIOD_US) {
+            time_imu_prev = time_source.now_us();
+            imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
+            Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
+            
+            measurements.imu = imu_data; // for filter
 
-        if (DEBUG_MODE == true){
-          Serial.print("IMU accel: ");
-          Serial.print(imu_data.ax);
-          Serial.print(", ");
-          Serial.print(imu_data.ay);
-          Serial.print(", ");
-          Serial.print(imu_data.az);
+            if (DEBUG_MODE == true){
+              Serial.print("IMU accel: ");
+              Serial.print(imu_data.ax);
+              Serial.print(", ");
+              Serial.print(imu_data.ay);
+              Serial.print(", ");
+              Serial.print(imu_data.az);
 
-          Serial.print(" | gyro: ");
-          Serial.print(imu_data.gx);
-          Serial.print(", ");
-          Serial.print(imu_data.gy);
-          Serial.print(", ");
-          Serial.print(imu_data.gz);
+              Serial.print(" | gyro: ");
+              Serial.print(imu_data.gx);
+              Serial.print(", ");
+              Serial.print(imu_data.gy);
+              Serial.print(", ");
+              Serial.print(imu_data.gz);
+            }
         }
-     
-        SDCard::SD_card_data sd_data;
-        sd_data.timestamp_us = now;
-        sd_data.imu_data = imu_data;
-        sd_data.gps_latitude = telemetry.latitude;
-        sd_data.gps_longitude = telemetry.longitude;
-        sd_data.gps_altitude = telemetry.altitude_m;
-        sd_card.save_to_buffer(sd_data);
+
+        if (now - time_sd_prev >= SD_CARD_PERIOD_US) {
+            time_sd_prev = time_source.now_us();
+            SDCard::SD_card_data sd_data;
+            sd_data.timestamp_us = now;
+            sd_data.imu_data = imu_data;
+            sd_data.gps_latitude = gps.latitude;
+            sd_data.gps_longitude = gps.longitude;
+            sd_data.gps_altitude = gps.altitude;
+            sd_card.save_to_buffer(sd_data);
+        }
 
         if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
             sd_card.buffered_write();
@@ -210,13 +209,13 @@ void loop() {
 
         // Get I2C Data
         if (now - time_mag_prev >= MAG_PERIOD_US) {
-            time_mag_prev = micros();
+            time_mag_prev = time_source.now_us();
 
             // mag.read
         }
 
         if (now - time_baro_prev >= BARO_PERIOD_US) {
-            time_baro_prev = micros();
+            time_baro_prev = time_source.now_us();
             
             // baro.read()
         }
@@ -226,15 +225,12 @@ void loop() {
         // ===============
         
         if (now - time_gps_prev >= GPS_PERIOD_US){
-          time_gps_prev = micros();
+          time_gps_prev = time_source.now_us();
 
 
           if (gps.newNMEAreceived()) {
-            if (gps.parse(gps.lastNMEA())) {
-              telemetry.latitude = gps.latitude;
-              telemetry.longitude = gps.longitude;
-              telemetry.altitude_m = gps.altitude; // Unsure if gps is giving in meters. Should check
-            }
+            gps.parse(gps.lastNMEA());
+              
           }
         }
 
@@ -244,19 +240,33 @@ void loop() {
         // Control Systems
 
         if (now - time_pid_prev >= PID_PERIOD_US) {
-          time_pid_prev = micros();
+          time_pid_prev = time_source.now_us();
           // PID.control(prediction.roll) <- maybe like this in the future?
         }
 
 
-          // Data Transmission
+        // Data Transmission
         if (now - time_radio_prev >= RADIO_PERIOD_US) {
-            time_radio_prev = micros();
+            time_radio_prev = time_source.now_us();
+
+            telemetry.packet++;
+            telemetry.time_ms = time_source.now_us() / 1000; // Convert to milliseconds
+
+            telemetry.yaw = 0.0f;          // just 0.0 since we not calculating these yet
+            telemetry.pitch = 0.0f;        
+            telemetry.roll = prediction.roll;
+
+            telemetry.altitude_m = gps.altitude;
+            telemetry.latitude = gps.latitude;
+            telemetry.longitude = gps.longitude;
+              
+            telemetry.imu_data = imu_data; // for radio
+
+
             radio.tx_base_station(telemetry);
         }
-
         if (now - time_filter_prev >= FILTER_PERIOD_US) {
-          time_filter_prev = micros();
+          time_filter_prev = time_source.now_us();
           filter.update(prediction, measurements);
         // filter.predict/update
         }
@@ -278,7 +288,7 @@ void loop() {
       }
     prev = now;
   }
-}
+
 
 /*================ EXAMPLE ZONE =======================
 

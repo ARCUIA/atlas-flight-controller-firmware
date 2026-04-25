@@ -90,31 +90,48 @@ bool RFD900XUS::is_command_available() {
 }
 
 
-bool RFD900XUS::receive_command(std::string& buffer) { // use std::string because it makes comparing easy
+bool RFD900XUS::receive_command(char* buffer) { // use std::string because it makes comparing easy
+
+    uint16_t buffer_index = 0;
+    buffer[0] = '\0'; // Reset the buffer
+
+    
 
     while (_radio.available() > 0) {
         char c = _radio.read();
-        buffer.push_back(c);
+        buffer[buffer_index] = c;
+        buffer_index ++;
+        buffer[buffer_index] = '\0';
 
-        if (buffer == "ARM") {
-            return true;
-        }
-        if (buffer == "PING") {
-            return true;
-        }
-        if (buffer == "RESET") {
-            return true;
-        }
 
-        if (buffer.size() >= RADIO_RECEIVE_LIMIT) {
-            // Clear everything in the radio. 
+       // buffer.push_back(c);
+
+        if (this->does_received_command_exist(buffer)){
+            return true;
+        }
+       
+
+        if (buffer_index >= RADIO_RECEIVE_LIMIT) {
+            // Clear everything
             while (this->is_command_available()) {
                 _radio.read();
             }
-            buffer.clear();
+            buffer[0] = '\0'; 
             return false;
         }
     }
 
     return false;
+
 }
+
+bool RFD900XUS::does_received_command_exist(const char* received_command){
+    for (int i = 0; i < NUM_COMMANDS; i++) {
+        if (strcmp(received_command, POSSIBLE_COMMANDS[i]) == 0) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
