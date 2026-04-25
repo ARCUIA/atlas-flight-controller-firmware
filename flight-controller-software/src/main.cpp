@@ -136,13 +136,23 @@ void setup()
 
 void loop() {
   now = time_source.now_us();
-  Serial.println("Here-1");
+  if (DEBUG_MODE == true) {
+    Serial.print("Loop start, now = ");
+    Serial.println(now);
+  }
+
+
+  char command_buffer[RFD900XUS::RADIO_RECEIVE_LIMIT + 1] = {0};
 
 
   char command_buffer[RFD900XUS::RADIO_RECEIVE_LIMIT + 1] = {0};
 
   if (radio.is_command_available()) {
       if (radio.receive_command(command_buffer)) {
+          if (DEBUG_MODE == true) {
+            Serial.print("Received command: ");
+            Serial.println(command_buffer);
+          }
 
           if (strcmp(command_buffer, "ARM") == 0) {
               state = flightState::POWERED_ASCENT;
@@ -161,9 +171,12 @@ void loop() {
       
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
+   
         break;
       
       case flightState::POWERED_ASCENT: {
+       
+
 
   
         // Just here to test, remove later
@@ -175,23 +188,20 @@ void loop() {
             measurements.imu = imu_data; // for filter
 
             if (DEBUG_MODE == true){
-              Serial.print("IMU accel: ");
-              Serial.print(imu_data.ax);
-              Serial.print(", ");
-              Serial.print(imu_data.ay);
-              Serial.print(", ");
-              Serial.print(imu_data.az);
-
-              Serial.print(" | gyro: ");
-              Serial.print(imu_data.gx);
-              Serial.print(", ");
-              Serial.print(imu_data.gy);
-              Serial.print(", ");
-              Serial.print(imu_data.gz);
+              Serial.print("IMU: ");
+              Serial.print(imu_data.ax); Serial.print(",");
+              Serial.print(imu_data.ay); Serial.print(",");
+              Serial.print(imu_data.az); Serial.print(" | ");
+              Serial.print(imu_data.gx); Serial.print(",");
+              Serial.print(imu_data.gy); Serial.print(",");
+              Serial.println(imu_data.gz);
             }
         }
 
         if (now - time_sd_prev >= SD_CARD_PERIOD_US) {
+            if (DEBUG_MODE == true) {
+              Serial.println("SD save");
+            }
             time_sd_prev = time_source.now_us();
             SDCard::SD_card_data sd_data;
             sd_data.timestamp_us = now;
@@ -203,6 +213,9 @@ void loop() {
         }
 
         if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
+            if (DEBUG_MODE == true) {
+              Serial.println("SD write");
+            }
             sd_card.buffered_write();
         }
 
@@ -286,6 +299,7 @@ void loop() {
         // Radio ping GPS every 1 minute, otherwise idle.
         break;
       }
+    
     prev = now;
   }
 
