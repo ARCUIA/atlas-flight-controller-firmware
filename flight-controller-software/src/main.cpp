@@ -79,7 +79,7 @@ uint32_t prev = now;
 float mag_dec = 0.0f;
 
 // Create Objects Here
-I2CBus imu_bus(Wire,0x6A);
+SPIBus imu_bus(SPI, 10);
 RFD900XUS radio(Serial5);
 LSM6DSV80X imu(imu_bus, time_source);
 Adafruit_GPS gps(&Serial1);
@@ -107,6 +107,7 @@ void setup()
   if (DEBUG_MODE == true){
     Serial.begin(DEBUG_SERIAL_BAUD_RATE);
     delay(1000);
+    Serial.print("INIT ROCKET");
   }
 
   // Keep Tests out of setup() in case of temp black/brownout.
@@ -118,7 +119,7 @@ void setup()
   Wire.begin();
   radio.begin(RADIO_BAUD_RATE); // Radio
   gps.begin(GPS_BAUD_RATE); // GPS
-  imu.begin(); // IMU
+  //imu.begin(); // IMU
   sd_card.begin();
 
   //  magnetometer.begin() // Magnetometer
