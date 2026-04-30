@@ -122,44 +122,45 @@ void setup()
 
   //  magnetometer.begin() // Magnetometer
   //  barometer.begin() // Barometer
-
-  Calibration calibration(radio, imu);
-  calibration.get_offsets(offset); // Runs the calibration routine. We probably want to move this somewhere else
+  Serial.print("INIT FINISHED");
+  //Calibration calibration(radio, imu);
+  //calibration.get_offsets(offset); // Runs the calibration routine. We probably want to move this somewhere else
 
   
   // Enable RMC and GGA
   gps.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // Set the default update rate of 1HZ
   gps.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
+  Serial.print("GPS COMMAND FINISHED");
+
 }
 
 void loop() {
-  now = micros();
-  char* command_buffer;
-  Serial.println("Here-1");
+ //Serial.println("Here-1");
+  state = flightState::POWERED_ASCENT;
 
 
-  if (now - prev >= DELAY) {
+  //if (now - prev >= DELAY) {
     
     char command_buffer[32] = {0};
 
-  if (radio.is_command_available()) {
-    if (radio.receive_command(command_buffer)) {
+    if (radio.is_command_available()) {
+      if (radio.receive_command(command_buffer)) {
 
-      if (strcmp(command_buffer, "ARM") == 0) {
-        state = flightState::POWERED_ASCENT;
-        radio.send_message("ARMED");
-      }
-      else if (strcmp(command_buffer, "PING") == 0) {
-        radio.send_message("PONG");
-      }
-      else if (strcmp(command_buffer, "RESET") == 0) {
-        radio.send_message("RESET_OK");
-      }
+        if (strcmp(command_buffer, "ARM") == 0) {
+          state = flightState::POWERED_ASCENT;
+          radio.send_message("ARMED");
+        }
+        else if (strcmp(command_buffer, "PING") == 0) {
+          radio.send_message("PONG");
+        }
+        else if (strcmp(command_buffer, "RESET") == 0) {
+          radio.send_message("RESET_OK");
+        }
 
-      command_buffer[0] = '\0';
+        command_buffer[0] = '\0';
+      }
     }
-  }
       
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
@@ -183,14 +184,14 @@ void loop() {
           Serial.print(", ");
           Serial.print(imu_data.ay);
           Serial.print(", ");
-          Serial.print(imu_data.az);
+          Serial.println(imu_data.az);
 
           Serial.print(" | gyro: ");
           Serial.print(imu_data.gx);
           Serial.print(", ");
           Serial.print(imu_data.gy);
           Serial.print(", ");
-          Serial.print(imu_data.gz);
+          Serial.println(imu_data.gz);
         }
      
         SDCard::SD_card_data sd_data;
@@ -275,7 +276,7 @@ void loop() {
         break;
       }
     prev = now;
-  }
+ // }
 }
 
 /*================ EXAMPLE ZONE =======================
