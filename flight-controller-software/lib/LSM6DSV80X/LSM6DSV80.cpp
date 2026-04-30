@@ -20,7 +20,7 @@
 typedef enum
 {
     LSM6DSV80X_XL_HIGH_PERFORM   = 0b0000000,  // default
-    LSM6DSV80X_XL_HIGH_ACCURACY  = 0b0001000, 
+    LSM6DSV80X_XL_HIGH_ACCURACY  = 0b0001000,  
     LSM6DSV80X_XL_NORMAL         = 0b0111000
 } lsm6dsv80x_xl_op_mode_t;
 

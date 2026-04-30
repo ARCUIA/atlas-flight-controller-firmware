@@ -105,7 +105,7 @@ void setup()
   if (DEBUG_MODE == true){
     Serial.begin(DEBUG_SERIAL_BAUD_RATE);
     delay(1000);
-    Serial.print("INIT ROCKET");
+    Serial.println("INIT ROCKET");
   }
 
   // Keep Tests out of setup() in case of temp black/brownout.
@@ -143,23 +143,23 @@ void loop() {
     
     char command_buffer[32] = {0};
 
-if (radio.is_command_available()) {
-  if (radio.receive_command(command_buffer)) {
+  if (radio.is_command_available()) {
+    if (radio.receive_command(command_buffer)) {
 
-    if (strcmp(command_buffer, "ARM") == 0) {
-      state = flightState::POWERED_ASCENT;
-      radio.send_message("ARMED");
-    }
-    else if (strcmp(command_buffer, "PING") == 0) {
-      radio.send_message("PONG");
-    }
-    else if (strcmp(command_buffer, "RESET") == 0) {
-      radio.send_message("RESET_OK");
-    }
+      if (strcmp(command_buffer, "ARM") == 0) {
+        state = flightState::POWERED_ASCENT;
+        radio.send_message("ARMED");
+      }
+      else if (strcmp(command_buffer, "PING") == 0) {
+        radio.send_message("PONG");
+      }
+      else if (strcmp(command_buffer, "RESET") == 0) {
+        radio.send_message("RESET_OK");
+      }
 
-    command_buffer[0] = '\0';
+      command_buffer[0] = '\0';
+    }
   }
-}
       
     switch (state) {  
       case flightState::PREFLIGHT_IDLE:
@@ -168,11 +168,6 @@ if (radio.is_command_available()) {
       case flightState::POWERED_ASCENT: {
 
       
-
-
-         
-
-        // Feel free to move wherever if you dont want to do this every loop
 
 
         // Just here to test, remove later
@@ -225,7 +220,7 @@ if (radio.is_command_available()) {
         }
 
         // ===============
-        //  TODO: Add in Drivers for sensors (LSM6DSV80X, LPS22HH)
+        //  TODO: Add in Drivers for sensors (LSM6DSV80X)
         // ===============
         
         if (now - time_gps_prev >= GPS_PERIOD_US){
