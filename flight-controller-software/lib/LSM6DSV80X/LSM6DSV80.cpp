@@ -7,7 +7,7 @@
 #define ctrl1_xl     0x10
 #define ctrl2_g      0x11
 #define ctrl3        0x12  // SW reset at pin 1 and BDU at pin 6 (need BDU on)
-#define ctrl6_g      0x15  // bw and full rate | BIT 4 NEEDS TO BE 1
+#define ctrl6_g      0x15  // bw and full rate | BIT 3 NEEDS TO BE 1 (0b1000)
 #define ctrl8_xl     0x17  // bw and full rate
 #define ctrl9_xl     0x18  // xl filtering and cal offset weighting
 
