@@ -15,7 +15,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <SD.h>
 #include <FS.h>
 #include <Adafruit_LIS2MDL.h>
 #include <Adafruit_GPS.h>
@@ -42,7 +41,7 @@ const int DEBUG_SERIAL_BAUD_RATE = 9600; // Baud rate for debugging
 const int ssPin = 38;
 
 const int GPS_BAUD_RATE = 9600;
-const int RADIO_BAUD_RATE = 57600;
+const int RADIO_BAUD_RATE = 115200;
 
 // Declaring Constants Here
 const uint32_t DELAY = 100000UL; // uS
@@ -81,7 +80,7 @@ SPIBus imu_bus(SPI, 10);
 RFD900XUS radio(Serial5);
 LSM6DSV80X imu(imu_bus, imu_time);
 Adafruit_GPS gps(&Serial1);
-SDCard sd_card(ssPin);
+SDCard sd_card(ssPin, SPI1);
 
 ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
 Filter::Prediction prediction;
@@ -105,19 +104,20 @@ void setup()
   if (DEBUG_MODE == true){
     Serial.begin(DEBUG_SERIAL_BAUD_RATE);
     delay(1000);
-    Serial.println("INIT ROCKET");
+    Serial.print("INIT ROCKET");
   }
 
   // Keep Tests out of setup() in case of temp black/brownout.
   prediction.roll = 0.0f; // Just so we dont grab a garbage value. There is code to ignore the first value of prediction.roll so this should be overwritten after we call filter.update
 
   mag_dec = get_mag_dec(launchSite::IOWA_CITY);
-  
+
+
   // Com Busses
   Wire.begin();
   radio.begin(RADIO_BAUD_RATE); // Radio
   gps.begin(GPS_BAUD_RATE); // GPS
-  //imu.begin(); // IMU
+  imu.begin(); // IMU
   sd_card.begin();
 
   //  magnetometer.begin() // Magnetometer
@@ -136,149 +136,127 @@ void setup()
 }
 
 void loop() {
- //Serial.println("Here-1");
+  now = micros();
+
+  if (now - prev < DELAY) {
+    return;
+  }
+  prev = now;
+
   state = flightState::POWERED_ASCENT;
 
+  char command_buffer[32] = {0};
 
-  //if (now - prev >= DELAY) {
-    
-    char command_buffer[32] = {0};
 
-    if (radio.is_command_available()) {
-      if (radio.receive_command(command_buffer)) {
+  if (radio.is_command_available()) {
+    if (radio.receive_command(command_buffer)) {
 
-        if (strcmp(command_buffer, "ARM") == 0) {
-          state = flightState::POWERED_ASCENT;
-          radio.send_message("ARMED");
-        }
-        else if (strcmp(command_buffer, "PING") == 0) {
-          radio.send_message("PONG");
-        }
-        else if (strcmp(command_buffer, "RESET") == 0) {
-          radio.send_message("RESET_OK");
-        }
-
-        command_buffer[0] = '\0';
+      if (strcmp(command_buffer, "ARM") == 0) {
+        state = flightState::POWERED_ASCENT;
+       // Calibration::apply_offsets(offset, imu_data); 
+        radio.send_message("ARMED\n");
       }
+      else if (strcmp(command_buffer, "PING") == 0) {
+        Serial.println("RECIEVED PING");
+        radio.send_message("PONG\n");
+      }
+      else if (strcmp(command_buffer, "RESET") == 0) {
+        radio.send_message("RESET_OK\n");
+      }
+
+      command_buffer[0] = '\0';
     }
-      
-    switch (state) {  
-      case flightState::PREFLIGHT_IDLE:
-        break;
-      
-      case flightState::POWERED_ASCENT: {
+  }
 
-      
+  switch (state) {  
+    case flightState::PREFLIGHT_IDLE:
+      break;
 
+    case flightState::POWERED_ASCENT: {
+      imu.read(imu_data);
 
-        // Just here to test, remove later
-        imu.read(imu_data); // imu_data will naturally be updated with the readings from the last imu measurement taken
-        Calibration::apply_offsets(offset, imu_data); // Apply the offsets in software not hardware
-        
-        telemetry.imu_data = imu_data; // for radio
-        measurements.imu = imu_data; // for filter
+      telemetry.imu_data = imu_data;
+      measurements.imu = imu_data;
+/*
+      if (DEBUG_MODE == true) {
+        Serial.print("IMU accel: ");
+        Serial.print(imu_data.ax);
+        Serial.print(", ");
+        Serial.print(imu_data.ay);
+        Serial.print(", ");
+        Serial.println(imu_data.az);
 
-        if (DEBUG_MODE == true){
-          Serial.print("IMU accel: ");
-          Serial.print(imu_data.ax);
-          Serial.print(", ");
-          Serial.print(imu_data.ay);
-          Serial.print(", ");
-          Serial.println(imu_data.az);
+        Serial.print(" | gyro: ");
+        Serial.print(imu_data.gx);
+        Serial.print(", ");
+        Serial.print(imu_data.gy);
+        Serial.print(", ");
+        Serial.println(imu_data.gz);
+      }
+*/
 
-          Serial.print(" | gyro: ");
-          Serial.print(imu_data.gx);
-          Serial.print(", ");
-          Serial.print(imu_data.gy);
-          Serial.print(", ");
-          Serial.println(imu_data.gz);
-        }
-     
-        SDCard::SD_card_data sd_data;
-        sd_data.timestamp_us = now;
-        sd_data.imu_data = imu_data;
-        sd_data.gps_latitude = telemetry.latitude;
-        sd_data.gps_longitude = telemetry.longitude;
-        sd_data.gps_altitude = telemetry.altitude_m;
-        sd_card.save_to_buffer(sd_data);
+      SDCard::SD_card_data sd_data;
+      sd_data.timestamp_us = now;
+      sd_data.imu_data = imu_data;
+      sd_data.gps_latitude = telemetry.latitude;
+      sd_data.gps_longitude = telemetry.longitude;
+      sd_data.gps_altitude = telemetry.altitude_m;
+      sd_card.save_to_buffer(sd_data);
 
-        if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
-            sd_card.buffered_write();
-        }
+      if (sd_card.get_buffer_count() >= BUFFER_SIZE) {
+        sd_card.buffered_write();
+      }
 
+      if (now - time_mag_prev >= MAG_PERIOD_US) {
+        time_mag_prev = now;
+        // mag.read
+      }
 
-        // Get I2C Data
-        if (now - time_mag_prev >= MAG_PERIOD_US) {
-            time_mag_prev = micros();
+      if (now - time_baro_prev >= BARO_PERIOD_US) {
+        time_baro_prev = now;
+        // baro.read()
+      }
 
-            // mag.read
-        }
+      if (now - time_gps_prev >= GPS_PERIOD_US) {
+        time_gps_prev = now;
 
-        if (now - time_baro_prev >= BARO_PERIOD_US) {
-            time_baro_prev = micros();
-            
-            // baro.read()
-        }
-
-        // ===============
-        //  TODO: Add in Drivers for sensors (LSM6DSV80X)
-        // ===============
-        
-        if (now - time_gps_prev >= GPS_PERIOD_US){
-          time_gps_prev = micros();
-
-
-          if (gps.newNMEAreceived()) {
-            if (gps.parse(gps.lastNMEA())) {
-              telemetry.latitude = gps.latitude;
-              telemetry.longitude = gps.longitude;
-              telemetry.altitude_m = gps.altitude; // Unsure if gps is giving in meters. Should check
-            }
+        if (gps.newNMEAreceived()) {
+          if (gps.parse(gps.lastNMEA())) {
+            telemetry.latitude = gps.latitude;
+            telemetry.longitude = gps.longitude;
+            telemetry.altitude_m = gps.altitude;
           }
         }
-
-        // State Estimation
-
-
-        // Control Systems
-
-        if (now - time_pid_prev >= PID_PERIOD_US) {
-          time_pid_prev = micros();
-          // PID.control(prediction.roll) <- maybe like this in the future?
-        }
-
-
-          // Data Transmission
-        if (now - time_radio_prev >= RADIO_PERIOD_US) {
-            time_radio_prev = micros();
-            radio.tx_base_station(telemetry);
-        }
-
-        if (now - time_filter_prev >= FILTER_PERIOD_US) {
-          time_filter_prev = micros();
-          filter.update(prediction, measurements);
-        // filter.predict/update
-        }
       }
 
-
-          break;
-      case flightState::UNPOWERED_ASCENT:
-        // Implement later
-        break;
-      case flightState::CHUTE_DESCENT:
-        // Turn off Cameras
-        // Turn off Motors
-        break;
-      case flightState::POSTFLIGHT_IDLE:
-        // If not already off, turn off everything besides radio and gps
-        // Radio ping GPS every 1 minute, otherwise idle.
-        break;
+      if (now - time_pid_prev >= PID_PERIOD_US) {
+        time_pid_prev = now;
+        // PID.control(prediction.roll)
       }
-    prev = now;
- // }
+
+      if (now - time_radio_prev >= RADIO_PERIOD_US) {
+        time_radio_prev = now;
+        radio.tx_base_station(telemetry);
+      }
+
+      if (now - time_filter_prev >= FILTER_PERIOD_US) {
+        time_filter_prev = now;
+        filter.update(prediction, measurements);
+      }
+
+      break;
+    }
+
+    case flightState::UNPOWERED_ASCENT:
+      break;
+
+    case flightState::CHUTE_DESCENT:
+      break;
+
+    case flightState::POSTFLIGHT_IDLE:
+      break;
+  }
 }
-
 /*================ EXAMPLE ZONE =======================
 
 I2CBus bus(Wire, 0x6A);

@@ -197,6 +197,7 @@ bool LSM6DSV80X::begin() {
     // Want LPF for noise reduction.
     // Gyro Range +/- 2000 dps
     // Accel Range of +/- 16g
+    return true;
 }
 
 // generic read, pass by ref IMU_Data ref for 3a,3g,1temp
@@ -212,14 +213,13 @@ bool LSM6DSV80X::read(IMU_Data& data) {
     _bus.read(OUT_TEMP_L, buf, BUF_LEN);
 
     // Assign data to struct
-    data.temperature = (buf[1] << 8)  | buf[0];
-    data.gx          = (buf[3] << 8)  | buf[2];
-    data.gy          = (buf[5] << 8)  | buf[4];
-    data.gz          = (buf[7] << 8)  | buf[6];
-    data.ax          = (buf[9] << 8)  | buf[8];
-    data.ay          = (buf[11] << 8) | buf[10];
-    data.az          = (buf[13] << 8) | buf[12];
-    data.time        = time;
+    data.temperature = (int16_t)((buf[1] << 8) | buf[0]);
+    data.gx          = (int16_t)((buf[3] << 8) | buf[2]);
+    data.gy          = (int16_t)((buf[5] << 8) | buf[4]);
+    data.gz          = (int16_t)((buf[7] << 8) | buf[6]);
+    data.ax          = (int16_t)((buf[9] << 8) | buf[8]);
+    data.ay          = (int16_t)((buf[11] << 8) | buf[10]);
+    data.az          = (int16_t)((buf[13] << 8) | buf[12]);
     
     return true;
 }

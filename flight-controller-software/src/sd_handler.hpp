@@ -1,3 +1,4 @@
+/*
 #ifndef SD_HANLDER
 #define SD_HANDLER
 
@@ -31,3 +32,5 @@ int initSD(int _ssPin) {
 }
 
 #endif
+
+*/
