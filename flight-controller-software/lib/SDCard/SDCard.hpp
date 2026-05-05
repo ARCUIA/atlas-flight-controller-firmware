@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <SdFat.h>
-#include "../LSM6DSV80X/LSM6DSV80X.h"
+#include "flight_data.hpp"
 
 #define PATH_TO_SD_DATA "/rocket"
 #define SD_DATA_FILENAME "/rocket/data.txt"
@@ -12,22 +12,7 @@
 
 class SDCard {
 public:
-    struct SD_card_data {
-        LSM6DSV80X::IMU_Data imu_data;
-
-        float gps_latitude = 0.0f;
-        float gps_longitude = 0.0f;
-        float gps_altitude = 0.0f;
-
-        float mag_x = 0.0f;
-        float mag_y = 0.0f;
-        float mag_z = 0.0f;
-
-        uint32_t timestamp_us = 0;
-    };
-
-    SDCard(int ss_pin, SPIClass& spi)
-        : ss_pin(ss_pin), spi(spi) {}
+    SDCard(int ss_pin, SPIClass& spi) : ss_pin(ss_pin), spi(spi) {}
 
     bool begin() {
         Serial.println("SD: begin start");
@@ -49,8 +34,6 @@ public:
 
         Serial.println("SD: calling sd.begin");
 
-        // Use conservative settings for bring-up.
-        // Once stable, you can try DEDICATED_SPI and SD_SCK_MHZ(4), 8, or 16.
         SdSpiConfig config(
             ss_pin,
             SHARED_SPI,
@@ -87,7 +70,7 @@ public:
     bool buffered_write() {
         if (!initialized) {
             Serial.println("SD not initialized; skipping write");
-            buffer_count = 0;   // prevents repeated failed writes forever
+            buffer_count = 0;
             return false;
         }
 
@@ -105,33 +88,36 @@ public:
         }
 
         for (int i = 0; i < buffer_count; i++) {
-            const SD_card_data& data = buffer[i];
+            const flight_data& data = buffer[i];
 
             file.print(data.timestamp_us);
             file.print(",");
-            file.print(data.imu_data.ax);
+
+            file.print(data.ax_g);
             file.print(",");
-            file.print(data.imu_data.ay);
+            file.print(data.ay_g);
             file.print(",");
-            file.print(data.imu_data.az);
+            file.print(data.az_g);
             file.print(",");
-            file.print(data.imu_data.gx);
+
+            file.print(data.gx_dps);
             file.print(",");
-            file.print(data.imu_data.gy);
+            file.print(data.gy_dps);
             file.print(",");
-            file.print(data.imu_data.gz);
+            file.print(data.gz_dps);
             file.print(",");
-            file.print(data.gps_latitude);
+
+            file.print(data.roll);
             file.print(",");
-            file.print(data.gps_longitude);
+
+            file.print(data.gps_fix_valid);
             file.print(",");
-            file.print(data.gps_altitude);
+            file.print(data.gps_latitude_deg);
             file.print(",");
-            file.print(data.mag_x);
+            file.print(data.gps_longitude_deg);
             file.print(",");
-            file.print(data.mag_y);
-            file.print(",");
-            file.print(data.mag_z);
+            file.print(data.gps_altitude_m);
+
             file.println();
         }
 
@@ -142,7 +128,7 @@ public:
         return true;
     }
 
-    bool save_to_buffer(const SD_card_data& data) {
+    bool save_to_buffer(const flight_data& data) {
         if (!initialized) {
             return false;
         }
@@ -172,7 +158,7 @@ private:
     bool initialized = false;
 
     int buffer_count = 0;
-    SD_card_data buffer[BUFFER_SIZE];
+    flight_data buffer[BUFFER_SIZE];
 };
 
 #endif

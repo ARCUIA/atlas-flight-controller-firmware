@@ -7,58 +7,64 @@ void RFD900XUS::begin(uint32_t baud) {
     _radio.begin(baud);
 }
 
-// Packet,time,yaw,pitch,roll,altitude, accel x, accel y, accel z, latitude, longitude
+// Base station format:
+// Packet,time,yaw,pitch,roll,altitude,accel_x,accel_y,accel_z,latitude,longitude
+//
+// Requirements:
+// - Comma-separated
+// - All numeric values
+// - At least 11 fields
+// - Each line ends with newline '\n'
+// - First character must be a digit
 
-/*
-Packet,time,yaw,pitch,roll,altitude, accel x, accel y, accel z, latitude, longitude
+bool RFD900XUS::tx_base_station(const flight_data& data) {
+    static uint32_t packet_count = 0;
 
-Christian Carlos
-Christian Carlos8:54 PM
-Comma-separated, 
-Must be all numeric values,
-Must have at least 11 fields,
-Each line must end with newline (\n),
-First character must be a digit (or it gets ignored) (edited)
-*/
-
-
-bool RFD900XUS::tx_base_station(const telemetry_packet& data) {
-    _radio.print(data.packet);
+    // Packet
+    _radio.print(packet_count++);
     _radio.print(',');
 
-    _radio.print(data.time_ms);
+    // Time in milliseconds
+    _radio.print(data.timestamp_us / 1000);
     _radio.print(',');
 
-    _radio.print(data.yaw);
+    // Yaw placeholder
+    _radio.print(0);
     _radio.print(',');
 
-    _radio.print(data.pitch);
+    // Pitch placeholder
+    _radio.print(0);
     _radio.print(',');
 
+    // Roll
     _radio.print(data.roll);
     _radio.print(',');
 
-    _radio.print(data.altitude_m);
+    // Altitude
+    _radio.print(data.gps_altitude_m);
     _radio.print(',');
 
-    _radio.print(data.imu_data.ax);
+    // Acceleration X, Y, Z
+    _radio.print(data.ax_g);
     _radio.print(',');
 
-    _radio.print(data.imu_data.ay);
+    _radio.print(data.ay_g);
     _radio.print(',');
 
-    _radio.print(data.imu_data.az);
+    _radio.print(data.az_g);
     _radio.print(',');
 
-    _radio.print(data.latitude);
+    // Latitude
+    _radio.print(data.gps_latitude_deg, 6);
     _radio.print(',');
 
-    _radio.print(data.longitude);
+    // Longitude
+    _radio.print(data.gps_longitude_deg, 6);
+
     _radio.print('\n');
 
     return true;
 }
-
 
 bool RFD900XUS::send_message(const char* text) {
     _radio.println(text);
@@ -73,59 +79,45 @@ int RFD900XUS::read() {
     return _radio.read();
 }
 
-
-
 /*
-
-BS: “PING” <-> Rocket: “PONG” (edited)
-BS: “ARM” <-> Rocket: “ARMED” (edited)
-BS: “RESET” <-> Rocket: “RESET_OK”*
-
+BS: “PING”  <-> Rocket: “PONG”
+BS: “ARM”   <-> Rocket: “ARMED”
+BS: “RESET” <-> Rocket: “RESET_OK”
 */
-
-
 
 bool RFD900XUS::is_command_available() {
     return _radio.available() > 0;
 }
 
-
-bool RFD900XUS::receive_command(char* buffer) { // use std::string because it makes comparing easy
-
+bool RFD900XUS::receive_command(char* buffer) {
     uint16_t buffer_index = 0;
-    buffer[0] = '\0'; // Reset the buffer
-
-    
+    buffer[0] = '\0';
 
     while (_radio.available() > 0) {
         char c = _radio.read();
+
         buffer[buffer_index] = c;
-        buffer_index ++;
+        buffer_index++;
         buffer[buffer_index] = '\0';
 
-
-       // buffer.push_back(c);
-
-        if (this->does_received_command_exist(buffer)){
+        if (this->does_received_command_exist(buffer)) {
             return true;
         }
-       
 
         if (buffer_index >= RADIO_RECEIVE_LIMIT) {
-            // Clear everything
             while (this->is_command_available()) {
                 _radio.read();
             }
-            buffer[0] = '\0'; 
+
+            buffer[0] = '\0';
             return false;
         }
     }
 
     return false;
-
 }
 
-bool RFD900XUS::does_received_command_exist(const char* received_command){
+bool RFD900XUS::does_received_command_exist(const char* received_command) {
     for (int i = 0; i < NUM_COMMANDS; i++) {
         if (strcmp(received_command, POSSIBLE_COMMANDS[i]) == 0) {
             return true;
@@ -134,4 +126,3 @@ bool RFD900XUS::does_received_command_exist(const char* received_command){
 
     return false;
 }
-

@@ -1,7 +1,6 @@
 #include "Calibration.h"
 
-Calibration::Calibration(RFD900XUS& radio, LSM6DSV80X& imu)
-    : _imu(imu), _radio(radio) {
+Calibration::Calibration(RFD900XUS& radio, LSM6DSV80X& imu) : _imu(imu), _radio(radio) {
 }
 
 void Calibration::get_offsets(Offsets& offsets) {
@@ -21,46 +20,45 @@ void Calibration::get_offsets(Offsets& offsets) {
     for (int i = 0; i < AXIS_NUM; i++) {
         char current_axis = axis_to_align[i];
 
-        // Prompts user, waits for one keypress, then clears input.
         _align_axis_prompt(current_axis);
 
         for (int j = 0; j < NUM_MEASUREMENTS; j++) {
             _imu.read(imu_data);
 
             // Gyro bias is measured while stationary, independent of orientation.
-            gyro_x += imu_data.gx;
-            gyro_y += imu_data.gy;
-            gyro_z += imu_data.gz;
+            gyro_x += imu_data.gx_raw;
+            gyro_y += imu_data.gy_raw;
+            gyro_z += imu_data.gz_raw;
             gyro_count++;
 
             switch (current_axis) {
                 case 'x':
-                    accel_x += imu_data.ax - ACCEL_STATIONARY_EXPECTED_VALUE;
+                    accel_x += imu_data.ax_raw - ACCEL_STATIONARY_EXPECTED_VALUE;
                     count_x++;
                     break;
 
                 case 'X':
-                    accel_x += imu_data.ax + ACCEL_STATIONARY_EXPECTED_VALUE;
+                    accel_x += imu_data.ax_raw + ACCEL_STATIONARY_EXPECTED_VALUE;
                     count_x++;
                     break;
 
                 case 'y':
-                    accel_y += imu_data.ay - ACCEL_STATIONARY_EXPECTED_VALUE;
+                    accel_y += imu_data.ay_raw - ACCEL_STATIONARY_EXPECTED_VALUE;
                     count_y++;
                     break;
 
                 case 'Y':
-                    accel_y += imu_data.ay + ACCEL_STATIONARY_EXPECTED_VALUE;
+                    accel_y += imu_data.ay_raw + ACCEL_STATIONARY_EXPECTED_VALUE;
                     count_y++;
                     break;
 
                 case 'z':
-                    accel_z += imu_data.az - ACCEL_STATIONARY_EXPECTED_VALUE;
+                    accel_z += imu_data.az_raw - ACCEL_STATIONARY_EXPECTED_VALUE;
                     count_z++;
                     break;
 
                 case 'Z':
-                    accel_z += imu_data.az + ACCEL_STATIONARY_EXPECTED_VALUE;
+                    accel_z += imu_data.az_raw + ACCEL_STATIONARY_EXPECTED_VALUE;
                     count_z++;
                     break;
 
@@ -124,23 +122,21 @@ void Calibration::_align_axis_prompt(char axis) {
 
     _radio.send_message(" axis, then press any key.");
 
-    // Wait for exactly one user confirmation.
     while (!_radio.available()) {
         timer.delay_us(10000);
     }
 
-    // Clear all pending input bytes so the next axis does not auto-advance.
     while (_radio.available()) {
         _radio.read();
     }
 }
 
 void Calibration::apply_offsets(const Offsets& offsets, LSM6DSV80X::IMU_Data& imu_data) {
-    imu_data.ax -= offsets.ax;
-    imu_data.ay -= offsets.ay;
-    imu_data.az -= offsets.az;
+    imu_data.ax_raw -= offsets.ax;
+    imu_data.ay_raw -= offsets.ay;
+    imu_data.az_raw -= offsets.az;
 
-    imu_data.gx -= offsets.gx;
-    imu_data.gy -= offsets.gy;
-    imu_data.gz -= offsets.gz;
+    imu_data.gx_raw -= offsets.gx;
+    imu_data.gy_raw -= offsets.gy;
+    imu_data.gz_raw -= offsets.gz;
 }

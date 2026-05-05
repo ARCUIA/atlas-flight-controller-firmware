@@ -16,6 +16,9 @@
 #define OUTX_L_A     0x28  // start of acc xlh>ylh>zlh
 
 
+#define GYRO_FS_RATIO 0.061037f
+#define ACCEL_FS_RATIO 0.000488296f
+
 // ctrl1_xl
 typedef enum
 {
@@ -206,23 +209,44 @@ bool LSM6DSV80X::read(IMU_Data& data) {
     const uint8_t BUF_LEN = 14;
     uint8_t buf[BUF_LEN] = {};
 
-    // Get Timestamp
-    uint32_t time = _time.now_us();
+    data.time = _time.now_us();
 
-    // Read Data to Buffer
     _bus.read(OUT_TEMP_L, buf, BUF_LEN);
 
-    // Assign data to struct
-    data.temperature = (int16_t)((buf[1] << 8) | buf[0]);
-    data.gx          = (int16_t)((buf[3] << 8) | buf[2]);
-    data.gy          = (int16_t)((buf[5] << 8) | buf[4]);
-    data.gz          = (int16_t)((buf[7] << 8) | buf[6]);
-    data.ax          = (int16_t)((buf[9] << 8) | buf[8]);
-    data.ay          = (int16_t)((buf[11] << 8) | buf[10]);
-    data.az          = (int16_t)((buf[13] << 8) | buf[12]);
-    
+    // Raw register counts
+    data.temperature_raw = (int16_t)((buf[1] << 8) | buf[0]);
+
+    data.gx_raw = (int16_t)((buf[3] << 8) | buf[2]);
+    data.gy_raw = (int16_t)((buf[5] << 8) | buf[4]);
+    data.gz_raw = (int16_t)((buf[7] << 8) | buf[6]);
+
+    data.ax_raw = (int16_t)((buf[9] << 8) | buf[8]);
+    data.ay_raw = (int16_t)((buf[11] << 8) | buf[10]);
+    data.az_raw = (int16_t)((buf[13] << 8) | buf[12]);
+
     return true;
 }
+
+
+bool LSM6DSV80X::sense_event(IMU_Data& data) {
+    if (!this->read(data)) {
+        return false;
+    }
+
+    data.gx_dps = data.gx_raw * GYRO_MAXVALUE_FS_RATIO;
+    data.gy_dps = data.gy_raw * GYRO_MAXVALUE_FS_RATIO;
+    data.gz_dps = data.gz_raw * GYRO_MAXVALUE_FS_RATIO;
+
+    data.ax_g = data.ax_raw * ACCEL_MAXVALUE_FS_RATIO;
+    data.ay_g = data.ay_raw * ACCEL_MAXVALUE_FS_RATIO;
+    data.az_g = data.az_raw * ACCEL_MAXVALUE_FS_RATIO;
+
+    data.temperature_c = data.temperature_raw;
+    return true;
+}
+
+
+
 
 void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
     
@@ -238,8 +262,3 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         z += (buf[5] << 8) | buf[4];
     }
 }
-
-
-
-
-
