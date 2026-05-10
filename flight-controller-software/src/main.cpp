@@ -2,7 +2,7 @@
  * @author Sam Manley & Reuben Sonnenschein
  * @brief Flight Controller Software for ARCUIA 2026 Secret Message Rocket
  * @date 2-15-26
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 // TODO: Kalman filter?
@@ -36,7 +36,7 @@ const int DEBUG_MODE = true;
 const int DEBUG_SERIAL_BAUD_RATE = 9600;
 
 // Pins
-const int ssPin = 38;
+const int sd_cs = 38;
 
 const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 115200;
@@ -75,10 +75,10 @@ TeensyTime imu_time;
 
 // Create Objects Here
 SPIBus imu_bus(SPI, 10);
-RFD900XUS radio(Serial5);
+RFD900XUS radio(Serial8);
 LSM6DSV80X imu(imu_bus, imu_time);
 Adafruit_GPS gps(&Serial1);
-SDCard sd_card(ssPin, SPI1);
+SDCard sd_card(sd_cs, SPI1);
 
 ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
 Filter::Prediction prediction;
@@ -197,6 +197,9 @@ void loop() {
     case flightState::PREFLIGHT_IDLE:
       break;
 
+    case flightState::ARMED:
+      break;
+
     case flightState::POWERED_ASCENT: {
       imu.sense_event(imu_data);
 
@@ -212,7 +215,7 @@ void loop() {
 
       if (now - time_mag_prev >= MAG_PERIOD_US) {
         time_mag_prev = now;
-        // mag.read
+        // mag.read()
       }
 
       if (now - time_baro_prev >= BARO_PERIOD_US) {

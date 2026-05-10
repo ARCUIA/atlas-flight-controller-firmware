@@ -1,7 +1,7 @@
 #ifndef STARTUP_H
 #define STARTUP_H
 
-#include "myenums.hpp"
+#include "myEnums.hpp"
 
 /**
  * @brief Runs on startup, when prompted. Will not run on power on.

@@ -5,6 +5,7 @@
 enum class flightState
 {
     PREFLIGHT_IDLE,
+    ARMED,
     POWERED_ASCENT,
     UNPOWERED_ASCENT,
     CHUTE_DESCENT,
