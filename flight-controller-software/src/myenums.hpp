@@ -9,7 +9,8 @@ enum class flightState
     POWERED_ASCENT,
     UNPOWERED_ASCENT,
     CHUTE_DESCENT,
-    POSTFLIGHT_IDLE
+    POSTFLIGHT_IDLE,
+    CALIBRATE
 };
 
 

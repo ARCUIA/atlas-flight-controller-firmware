@@ -37,6 +37,7 @@ const int DEBUG_SERIAL_BAUD_RATE = 9600;
 
 // Pins
 const int sd_cs = 38;
+const int imu_int1_pin = 9;
 
 const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 115200;
@@ -70,6 +71,9 @@ const float FILTER_ACCEL_WEIGHT = 0.5f;
 
 uint32_t prev = now;
 float mag_dec = 0.0f;
+
+// For Imu_int1
+volatile bool launchDetected = false;
 
 TeensyTime imu_time;
 
@@ -128,6 +132,11 @@ void print_flight_data(const flight_data& data) {
   Serial.println(data.gps_altitude_m);
 }
 
+void imu_int1_isr() {
+    launchDetected = true;
+    //digitalToggleFast(8);
+}
+
 void setup() {
   if (DEBUG_MODE == true) {
     Serial.begin(DEBUG_SERIAL_BAUD_RATE);
@@ -135,9 +144,18 @@ void setup() {
     Serial.print("INIT ROCKET");
   }
 
+  // init LEDs
+
+
+  // Setting up INT1 on IMU
+  pinMode(imu_int1_pin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(imu_int1_pin), imu_int1_isr, RISING);
+
+
   // Keep tests out of setup() in case of temporary black/brownout.
   prediction.roll = 0.0f;
 
+  // Leave for now.
   mag_dec = get_mag_dec(launchSite::IOWA_CITY);
 
   // Com Busses
@@ -146,6 +164,9 @@ void setup() {
   gps.begin(GPS_BAUD_RATE);
   imu.begin();
   sd_card.begin();
+
+  imu.setupYInterrupt();
+
 
   Serial.print("INIT FINISHED");
 
@@ -170,6 +191,15 @@ void loop() {
 
   prev = now;
 
+  // Testing int1
+  if (launchDetected) {
+    pinMode(8, OUTPUT);
+    digitalWrite(8, HIGH);
+    Serial.println("INT1 detected.");
+    while(1);
+  }
+
+  // Watch out for if changing states
   state = flightState::POWERED_ASCENT;
 
   char command_buffer[32] = {0};
@@ -177,7 +207,7 @@ void loop() {
   if (radio.is_command_available()) {
     if (radio.receive_command(command_buffer)) {
       if (strcmp(command_buffer, "ARM") == 0) {
-        state = flightState::POWERED_ASCENT;
+        state = flightState::POWERED_ASCENT; // Need to change to ARMED once the interrupts and circular buffer work
         // Calibration::apply_offsets(offset, imu_data);
         radio.send_message("ARMED\n");
       }
@@ -202,6 +232,16 @@ void loop() {
 
     case flightState::POWERED_ASCENT: {
       imu.sense_event(imu_data);
+
+      // Alternative approach to imu int
+      // Not as robust since it can miss on poll but will work for now
+      if(imu_data.ay_g >= 2.0) {
+        // int detected switch state
+        pinMode(8, OUTPUT);
+        digitalWrite(8, HIGH);
+        delay(20);
+        digitalWrite(8, LOW);
+      }
 
       current_flight_data.timestamp_us = now;
 

@@ -262,3 +262,41 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         z += (buf[5] << 8) | buf[4];
     }
 }
+
+
+/**
+ * Interrupt to switch FSM into POWERED_ASCENT
+ */
+void LSM6DSV80X::setupYInterrupt() {
+    // 1. GLOBAL INTERRUPT ENABLE (The missing key!)
+    // Register: FUNCTIONS_ENABLE (0x50)
+    // Bit 7: INTERRUPTS_ENABLE = 1 -> Enables wake-up and other basic interrupts
+    _bus.write(0x50, 0x80); 
+
+    // 2. SET THRESHOLD WEIGHT
+    // Register: INACTIVITY_DUR (0x54)
+    // Bits 6-4: WU_INACT_THS_W_[2:0] = 101 -> Sets weight to 250 mg/LSB
+    _bus.write(0x54, 0x50); 
+
+    // 3. SET WAKE-UP THRESHOLD
+    // Register: WAKE_UP_THS (0x5B)
+    // Bits 5-0: WK_THS_[5:0] = 8 -> 8 * 250mg = 2000mg (2g)
+    _bus.write(0x5B, 0x08);
+
+    // 4. MASK SETTLING & ENABLE Y-AXIS
+    // Register: TAP_CFG0 (0x56)
+    // Bit 5: HW_FUNC_MASK_XL_SETTL = 1 -> Mask settling noise
+    // Bit 2: TAP_Y_EN = 1 -> Enable Y direction
+    // 0x20 | 0x04 = 0x24
+    _bus.write(0x56, 0x24);
+
+    // 5. SET WAKE-UP DURATION
+    // Register: WAKE_UP_DUR (0x5C)
+    // Bits 6-5: WAKE_DUR_[1:0] = 00 -> Trigger immediately on 1st over-threshold sample
+    _bus.write(0x5C, 0x00);
+
+    // 6. ROUTE TO INT1
+    // Register: MD1_CFG (0x5E)
+    // Bit 5: INT1_WU = 1 -> Routes the wake-up event to the INT1 pin
+    _bus.write(0x5E, 0x20);
+}

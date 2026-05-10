@@ -29,29 +29,29 @@ bool RFD900XUS::tx_base_station(const flight_data& data) {
     _radio.print(',');
 
     // Yaw placeholder
-    _radio.print(0);
+    _radio.print("0");
     _radio.print(',');
 
     // Pitch placeholder
-    _radio.print(0);
+    _radio.print("0");
     _radio.print(',');
 
     // Roll
-    _radio.print(data.roll);
+    _radio.print(data.gz_dps);
     _radio.print(',');
 
     // Altitude
-    _radio.print(data.gps_altitude_m);
+    _radio.print(data.gps_altitude_m, 2);
     _radio.print(',');
 
     // Acceleration X, Y, Z
-    _radio.print(data.ax_g);
+    _radio.print(data.ax_g, 2);
     _radio.print(',');
 
-    _radio.print(data.ay_g);
+    _radio.print(data.ay_g, 2);
     _radio.print(',');
 
-    _radio.print(data.az_g);
+    _radio.print(data.az_g, 2);
     _radio.print(',');
 
     // Latitude

@@ -52,6 +52,8 @@ public:
 
     void cal_ZRL_Gyro(float gcal[], int size);
 
+    void setupYInterrupt();
+
 private:
     IBus& _bus;
     ITimeSource& _time;
