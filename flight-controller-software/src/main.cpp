@@ -1,5 +1,5 @@
 /**
- * @author Sam Manley
+ * @author Sam Manley & Reuben Sonnenschein
  * @brief Flight Controller Software for ARCUIA 2026 Secret Message Rocket
  * @date 2-15-26
  * @version 1.0.0
