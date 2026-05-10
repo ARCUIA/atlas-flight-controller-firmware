@@ -23,9 +23,8 @@
 
 
 // Header Files
-#include "startup.hpp"
-#include "myenums.hpp"
-#include "sd_handler.hpp"
+#include "../src/myEnums.hpp"
+#include "../src/sd_handler.hpp"
 #include "../lib/LSM6DSV80X/LSM6DSV80X.h"
 #include "../lib/RFD900XUS/RFD900XUS.h"
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
