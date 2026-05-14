@@ -267,6 +267,15 @@ void loop() {
 
       current_flight_data.timestamp_us = now;
 
+      // IMU X = MAG -Y
+      // IMU Y = MAG -X
+      // SO .... WE NEED TO TAKE Y READING FROM MAG, INVERT SIGN AND PUT IN MAG_X OR WE NEED TO TAKE X FROM IMU AND INVERT SIGN AND PUT THAT IN MAG
+      // WHICH DO WE PICK? 
+      // WELL IT SHOULD BE STANDARDIZED
+      // SO WHICH FRAME IS TRUTH? WELL MAYBE NEITHER? IT DEPENDS ON THE NEEDS OF AHRS I SUPPOSE.
+      // WERE GONNA GO AHEAD AND MAKE IMU TRUTH BECAUSE IT IS MORE 'CENTRAL'
+
+      
       current_flight_data.ax_g = imu_data.ax_g;
       current_flight_data.ay_g = imu_data.ay_g;
       current_flight_data.az_g = imu_data.az_g;
