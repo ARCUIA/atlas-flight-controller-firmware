@@ -7,8 +7,6 @@
 #include "../Core/src/IBus.hpp"
 #include "../Core/src/ITimeSource.hpp"
 
-#define GYRO_MAXVALUE_FS_RATIO  0.061037f  // 2000 / 32767, dps/count
-#define ACCEL_MAXVALUE_FS_RATIO 0.000488f  // 16 / 32767, g/count
 
 /**
  * @author Sam Manley

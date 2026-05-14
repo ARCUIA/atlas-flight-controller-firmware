@@ -22,9 +22,9 @@ struct flight_data {
     float gy_dps;
     float gz_dps;
 
-    float mag_x_ut;
-    float mag_y_ut;
-    float mag_z_ut;
+    float mag_x_g;
+    float mag_y_g;
+    float mag_z_g;
 
     float roll;
 

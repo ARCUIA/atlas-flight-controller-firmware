@@ -24,6 +24,7 @@
 #include "flight_data.hpp"
 #include "../lib/LSM6DSV80X/LSM6DSV80X.h"
 #include "../lib/RFD900XUS/RFD900XUS.h"
+#include "../lib/LIS2MDL/LIS2MDL.hpp"
 #include "../lib/Platform_Teensy/TeensyTime.hpp"
 #include "../lib/Platform_Teensy/I2CBus.hpp"
 #include "../lib/Platform_Teensy/SPIBus.hpp"
@@ -31,7 +32,6 @@
 #include "../lib/Ahrs/Filters/ComplimentaryFilter.hpp"
 #include "../lib/Ahrs/Filter.h"
 #include "../lib/SDCard/SDCard.hpp"
-#include "../lib/LED/led.hpp"
 
 const int DEBUG_MODE = true;
 const int DEBUG_SERIAL_BAUD_RATE = 9600;
@@ -44,18 +44,18 @@ const int GPS_BAUD_RATE = 9600;
 const int RADIO_BAUD_RATE = 115200;
 
 // Main loop delay
-const uint32_t DELAY = 10000UL; // 10 ms (in uS)
+const uint32_t DELAY = 100000UL; // uS
 
 // Time
 uint32_t now = micros();
 
 // Periods of when to do each action
 const uint32_t FILTER_PERIOD_US  = DELAY;
-const uint32_t GPS_PERIOD_US     = 1000000UL; // 1 second (in uS)
-const uint32_t MAG_PERIOD_US     = 50000UL; // 50 ms
-const uint32_t BARO_PERIOD_US    = 50000UL; // 50 ms
+const uint32_t GPS_PERIOD_US     = 1000000UL;
+const uint32_t MAG_PERIOD_US     = 50000UL;
+const uint32_t BARO_PERIOD_US    = 50000UL;
 const uint32_t PID_PERIOD_US     = DELAY;
-const uint32_t RADIO_PERIOD_US   = 100000UL; 
+const uint32_t RADIO_PERIOD_US   = 100000UL;
 const uint32_t SD_CARD_PERIOD_US = 100000UL;
 
 // Starting times to decide when to do actions
@@ -89,11 +89,10 @@ ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
 Filter::Prediction prediction;
 
 Adafruit_LIS2MDL mag;
-
-// I2CBus magnetometer;
 // I2CBus barometer;
 
 LSM6DSV80X::IMU_Data imu_data;
+LIS2MDL::mag_data mag_data;
 Calibration::Offsets offset;
 
 flightState state;
@@ -118,13 +117,6 @@ void print_flight_data(const flight_data& data) {
   Serial.print(", ");
   Serial.print(data.gz_dps);
 
-  Serial.print(" | mag_ut: ");
-  Serial.print(data.mag_x_ut);
-  Serial.print(", ");
-  Serial.print(data.mag_y_ut);
-  Serial.print(", ");
-  Serial.print(data.mag_z_ut);
-
   Serial.print(" | roll: ");
   Serial.print(data.roll);
 
@@ -140,10 +132,10 @@ void print_flight_data(const flight_data& data) {
   Serial.println(data.gps_altitude_m);
 }
 
-// void imu_int1_isr() {
-//     launchDetected = true;
-//     //digitalToggleFast(8);
-// }
+void imu_int1_isr() {
+    launchDetected = true;
+    //digitalToggleFast(8);
+}
 
 void setup() {
   if (DEBUG_MODE == true) {
@@ -156,8 +148,8 @@ void setup() {
 
 
   // Setting up INT1 on IMU
-  // pinMode(imu_int1_pin, INPUT);
-  // attachInterrupt(digitalPinToInterrupt(imu_int1_pin), imu_int1_isr, RISING);
+  pinMode(imu_int1_pin, INPUT);
+  attachInterrupt(digitalPinToInterrupt(imu_int1_pin), imu_int1_isr, RISING);
 
 
   // Keep tests out of setup() in case of temporary black/brownout.
@@ -167,17 +159,13 @@ void setup() {
   mag_dec = get_mag_dec(launchSite::IOWA_CITY);
 
   // Com Busses
-  // Wire.begin();
+  Wire.begin();
   radio.begin(RADIO_BAUD_RATE);
   gps.begin(GPS_BAUD_RATE);
   imu.begin();
-
-  // set up mag in 4wspi
-  
-
   sd_card.begin();
 
-  //imu.setupYInterrupt();
+  imu.setupYInterrupt();
 
 
   Serial.print("INIT FINISHED");
@@ -230,12 +218,6 @@ void loop() {
       else if (strcmp(command_buffer, "RESET") == 0) {
         radio.send_message("RESET_OK\n");
       }
-      else if (strcmp(command_buffer, "GYRO CALIBRATE") == 0) {
-        // Calibrate Gyro
-      }
-      else if (strcmp(command_buffer, "ACC CALIBRATE") == 0) {
-        // Calibrate Acc
-      }
 
       command_buffer[0] = '\0';
     }
@@ -246,10 +228,6 @@ void loop() {
       break;
 
     case flightState::ARMED:
-      // Need to start reading data to circular buffer or straight to SD (start with straight to SD)
-
-    
-    
       break;
 
     case flightState::POWERED_ASCENT: {
@@ -269,13 +247,11 @@ void loop() {
 
       // IMU X = MAG -Y
       // IMU Y = MAG -X
-      // SO .... WE NEED TO TAKE Y READING FROM MAG, INVERT SIGN AND PUT IN MAG_X OR WE NEED TO TAKE X FROM IMU AND INVERT SIGN AND PUT THAT IN MAG
-      // WHICH DO WE PICK? 
-      // WELL IT SHOULD BE STANDARDIZED
-      // SO WHICH FRAME IS TRUTH? WELL MAYBE NEITHER? IT DEPENDS ON THE NEEDS OF AHRS I SUPPOSE.
-      // WERE GONNA GO AHEAD AND MAKE IMU TRUTH BECAUSE IT IS MORE 'CENTRAL'
+      // I chose to align magnetometer to match the imu rather than vice versa
+      current_flight_data.mag_x_g = -mag_data.magy_g;
+      current_flight_data.mag_y_g = -mag_data.magx_g;
+      current_flight_data.mag_z_g = mag_data.magz_g; 
 
-      
       current_flight_data.ax_g = imu_data.ax_g;
       current_flight_data.ay_g = imu_data.ay_g;
       current_flight_data.az_g = imu_data.az_g;
@@ -287,13 +263,11 @@ void loop() {
       if (now - time_mag_prev >= MAG_PERIOD_US) {
         time_mag_prev = now;
         // mag.read()
-
       }
 
       if (now - time_baro_prev >= BARO_PERIOD_US) {
         time_baro_prev = now;
         // baro.read()
-
       }
 
       if (now - time_gps_prev >= GPS_PERIOD_US) {

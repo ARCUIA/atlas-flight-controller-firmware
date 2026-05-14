@@ -16,9 +16,6 @@
 #define OUTX_L_A     0x28  // start of acc xlh>ylh>zlh
 
 
-#define GYRO_FS_RATIO 0.061037f
-#define ACCEL_FS_RATIO 0.000488296f
-
 // ctrl1_xl
 typedef enum
 {
@@ -252,20 +249,22 @@ bool LSM6DSV80X::read(IMU_Data& data) {
 }
 
 
+#define GYRO_FS_RATIO 0.061037f
+#define ACCEL_FS_RATIO 0.000488296f
 bool LSM6DSV80X::sense_event(IMU_Data& data) {
     if (!this->read(data)) {
         return false;
     }
 
     // This is for 2000 dps only
-    data.gx_dps = data.gx_raw * GYRO_MAXVALUE_FS_RATIO;
-    data.gy_dps = data.gy_raw * GYRO_MAXVALUE_FS_RATIO;
-    data.gz_dps = data.gz_raw * GYRO_MAXVALUE_FS_RATIO;
+    data.gx_dps = data.gx_raw * GYRO_FS_RATIO;
+    data.gy_dps = data.gy_raw * GYRO_FS_RATIO;
+    data.gz_dps = data.gz_raw * GYRO_FS_RATIO;
 
     // This is for 16 g only
-    data.ax_g = data.ax_raw * ACCEL_MAXVALUE_FS_RATIO;
-    data.ay_g = data.ay_raw * ACCEL_MAXVALUE_FS_RATIO;
-    data.az_g = data.az_raw * ACCEL_MAXVALUE_FS_RATIO;
+    data.ax_g = data.ax_raw * ACCEL_FS_RATIO;
+    data.ay_g = data.ay_raw * ACCEL_FS_RATIO;
+    data.az_g = data.az_raw * ACCEL_FS_RATIO;
 
     data.temperature_c = data.temperature_raw;
     return true;

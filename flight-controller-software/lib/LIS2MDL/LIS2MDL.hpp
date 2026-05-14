@@ -38,10 +38,19 @@ void magWrite(uint8_t reg, uint8_t val) {
     SPI.endTransaction();
 }
 
+
 class LIS2MDL : public Adafruit_LIS2MDL {
 public:
     // Constructor
     LIS2MDL(IBus& bus, ITimeSource& time) : _bus(bus), _time(time) {}
+
+    // Convert from uint16_t to float somewhere by multiplying the raw value by MAG_FS_RATIO
+    // Might need to convert to microtesla?
+    struct mag_data {
+        float magx_g; 
+        float magy_g;
+        float magz_g;
+    };
 
     // ONLY WORKS ON SPI0 RIGHT NOW (hardcoded)
     bool enable4WireSPI() {
@@ -55,15 +64,20 @@ public:
         return (magRead(0x62) & (uint8_t)0x04);
     }
 
+    
+    // largest possible value in 16 bit 2's compliment: 32768 
+    // largest possible reading: 49.152
+    // 49.152 / 32768 = 0.0015
+    #define MAG_FS_RATIO 0.0015f
     // Add these
-    read()
-    write() 
+   // read()
+   // write() 
 
 private:
     IBus& _bus;
     ITimeSource& _time;
 
-}
+};
 
 
 
