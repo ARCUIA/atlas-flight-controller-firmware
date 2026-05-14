@@ -67,9 +67,6 @@ uint32_t time_pid_prev = now;
 uint32_t time_radio_prev = now;
 uint32_t time_sd_prev = now;
 
-const float FILTER_GYRO_WEIGHT = 0.5f;
-const float FILTER_ACCEL_WEIGHT = 0.5f;
-
 uint32_t prev = now;
 float mag_dec = 0.0f;
 
@@ -85,7 +82,7 @@ LSM6DSV80X imu(imu_bus, imu_time);
 Adafruit_GPS gps(&Serial1);
 SDCard sd_card(sd_cs, SPI1);
 
-ComplementaryFilter filter(FILTER_GYRO_WEIGHT, FILTER_ACCEL_WEIGHT);
+ComplementaryFilter filter;
 Filter::Prediction prediction;
 
 Adafruit_LIS2MDL mag;
