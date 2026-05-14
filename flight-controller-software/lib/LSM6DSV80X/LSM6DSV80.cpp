@@ -204,6 +204,30 @@ bool LSM6DSV80X::begin() {
 }
 
 // generic read, pass by ref IMU_Data ref for 3a,3g,1temp
+bool LSM6DSV80X::raw_read(IMU_Data& data) {
+
+    const uint8_t BUF_LEN = 14;
+    uint8_t buf[BUF_LEN] = {};
+
+    data.time = _time.now_us();
+
+    _bus.read(OUT_TEMP_L, buf, BUF_LEN);
+
+    // Raw register counts
+    data.temperature_raw = (int16_t)((buf[1] << 8) | buf[0]);
+
+    data.gx_raw = (int16_t)((buf[3] << 8) | buf[2]);
+    data.gy_raw = (int16_t)((buf[5] << 8) | buf[4]);
+    data.gz_raw = (int16_t)((buf[7] << 8) | buf[6]);
+
+    data.ax_raw = (int16_t)((buf[9] << 8) | buf[8]);
+    data.ay_raw = (int16_t)((buf[11] << 8) | buf[10]);
+    data.az_raw = (int16_t)((buf[13] << 8) | buf[12]);
+
+    return true;
+}
+
+// generic read, pass by ref IMU_Data ref for 3a,3g,1temp
 bool LSM6DSV80X::read(IMU_Data& data) {
 
     const uint8_t BUF_LEN = 14;
@@ -233,10 +257,12 @@ bool LSM6DSV80X::sense_event(IMU_Data& data) {
         return false;
     }
 
+    // This is for 2000 dps only
     data.gx_dps = data.gx_raw * GYRO_MAXVALUE_FS_RATIO;
     data.gy_dps = data.gy_raw * GYRO_MAXVALUE_FS_RATIO;
     data.gz_dps = data.gz_raw * GYRO_MAXVALUE_FS_RATIO;
 
+    // This is for 16 g only
     data.ax_g = data.ax_raw * ACCEL_MAXVALUE_FS_RATIO;
     data.ay_g = data.ay_raw * ACCEL_MAXVALUE_FS_RATIO;
     data.az_g = data.az_raw * ACCEL_MAXVALUE_FS_RATIO;
@@ -261,11 +287,17 @@ void LSM6DSV80X::cal_ZRL_Gyro(float gcal[], int size){
         y += (buf[3] << 8) | buf[2];
         z += (buf[5] << 8) | buf[4];
     }
-}
 
+    // Calculating the average and storing values into bias variables
+    _bias_g_x = x / 500;
+    _bias_g_y = y / 500;
+    _bias_g_z = z / 500;
+}
 
 /**
  * Interrupt to switch FSM into POWERED_ASCENT
+ * 
+ * NOT USING FOR NOW. NEEDS FURTHER RESEARCH.
  */
 void LSM6DSV80X::setupYInterrupt() {
     // 1. GLOBAL INTERRUPT ENABLE (The missing key!)

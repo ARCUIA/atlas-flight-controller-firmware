@@ -47,8 +47,9 @@ public:
     LSM6DSV80X(IBus& bus, ITimeSource& time) : _bus(bus), _time(time) {}
 
     bool begin();
-    bool read(IMU_Data& data);
-    bool sense_event(IMU_Data& data);
+    bool raw_read(IMU_Data& data);
+    bool read(IMU_Data &data);
+    bool sense_event(IMU_Data &data);
 
     void cal_ZRL_Gyro(float gcal[], int size);
 
@@ -57,6 +58,12 @@ public:
 private:
     IBus& _bus;
     ITimeSource& _time;
+
+    // ZRL values calculated by cal_ZRL_Gyro. Use in read().
+    int16_t _bias_g_x = 0;
+    int16_t _bias_g_y = 0;
+    int16_t _bias_g_z = 0;
+    
 };
 
 #endif

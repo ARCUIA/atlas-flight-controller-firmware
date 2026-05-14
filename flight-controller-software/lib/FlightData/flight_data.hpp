@@ -22,6 +22,10 @@ struct flight_data {
     float gy_dps;
     float gz_dps;
 
+    float mag_x_ut;
+    float mag_y_ut;
+    float mag_z_ut;
+
     float roll;
 
     bool gps_fix_valid;
