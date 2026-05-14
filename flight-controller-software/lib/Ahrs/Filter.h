@@ -22,7 +22,7 @@ public:
 
     virtual bool update(Prediction& prediction, const flight_data& data) = 0;
 
-    float compute_roll(float ay_g, float az_g) {
+    static float compute_roll(float ay_g, float az_g) {
         return atan2(ay_g, az_g) * RAD_TO_DEG;
     }
 

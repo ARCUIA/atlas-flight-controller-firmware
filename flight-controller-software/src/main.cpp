@@ -150,7 +150,7 @@ void setup() {
 
 
   // Keep tests out of setup() in case of temporary black/brownout.
-  prediction.roll = 0.0f;
+
 
   // Leave for now.
   mag_dec = get_mag_dec(launchSite::IOWA_CITY);
@@ -164,6 +164,8 @@ void setup() {
 
   imu.setupYInterrupt();
 
+  imu.sense_event(imu_data); // Initial measurement while the rocket is grounded just to get initial roll.
+  prediction.roll = Filter::compute_roll(imu_data.ay_g, imu_data.az_g);
 
   Serial.print("INIT FINISHED");
 
